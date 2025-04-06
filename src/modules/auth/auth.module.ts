@@ -10,6 +10,7 @@ import { roleProviders } from '../roles/role.providers';
 import { userProviders } from '../users/user.provider';
 import { DatabaseModule } from 'src/database/database.module';
 import { RolesModule } from '../roles/roles.module';
+import { jwtConstants } from './constants/constants';
 
 @Module({
   imports: [
@@ -17,12 +18,10 @@ import { RolesModule } from '../roles/roles.module';
     RolesModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
+      secret: jwtConstants.secret,
       signOptions: {
-        expiresIn: process.env.JWT_EXPIRES_IN,
-        algorithm: 'HS256',
+        expiresIn: jwtConstants.expiresIn,
       },
-      verifyOptions: { algorithms: ['HS256'] },
     }),
     DatabaseModule,
   ],

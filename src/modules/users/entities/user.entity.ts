@@ -3,23 +3,26 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
+  CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
 
-@Entity('Users')
+@Entity('users')
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ type: 'nvarchar', length: 256, nullable: true, unique: true })
+  @Column({ type: 'nvarchar', nullable: true, unique: true })
   username: string;
 
-  @Column({ type: 'nvarchar', length: 256, unique: true })
+  @Column({ type: 'nvarchar', unique: true })
   email: string;
 
   @Column({ type: 'nvarchar' })
@@ -31,29 +34,27 @@ export class User extends BaseEntity {
     this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
   }
 
-  async comparePassword(password: string): Promise<boolean> {
-    return await bcrypt.compare(password, this.passwordHash);
-  }
+  // async comparePassword(password: string): Promise<boolean> {
+  //   return await bcrypt.compare(password, this.passwordHash);
+  // }
 
   @Column({ type: 'bit', default: true })
   isActive: boolean;
 
-  // @CreateDateColumn({ type: 'timestamp' })
-  // @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  // createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-  // @UpdateDateColumn({ type: 'timestamp' })
-  // @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  // updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-  // @DeleteDateColumn({ type: 'timestamp' })
-  // @Column({ type: 'timestamp', nullable: true })
-  // deletedAt: Date;
-
-  @Column({ type: 'bit', default: false })
-  isDeleted: boolean;
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @ManyToMany(() => Role, (role) => role.users)
-  @JoinTable()
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'roleId', referencedColumnName: 'id' },
+  })
   roles: Role[];
 }

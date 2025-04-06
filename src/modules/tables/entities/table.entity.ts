@@ -7,15 +7,18 @@ import {
 
 @Entity('tables')
 export class Table extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column()
+  @Column({ type: 'bigint' })
   restaurantId: number;
 
-  @Column()
+  @Column({ type: 'nvarchar', length: 256 })
+  name: string;
+
+  @Column({ type: 'int', length: 256 })
   capacity: number;
 
-  @Column()
+  @Column({ type: 'bit', length: 256 })
   isAvailable: boolean;
 }

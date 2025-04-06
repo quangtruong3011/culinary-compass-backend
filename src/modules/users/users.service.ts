@@ -24,29 +24,31 @@ export class UsersService {
     return await this.userRepository.save(user);
   }
 
-  async findAll(options?: PaginationOptions): Promise<PaginationResult<User>> {
-    const { page = 1, limit = 10 } = options || {};
+  // async findAll(options?: PaginationOptions): Promise<PaginationResult<User>> {
+  //   const { page = 1, limit = 10 } = options || {};
 
-    const [results, total] = await this.userRepository.findAndCount({
-      where: { isDeleted: false },
-      // order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['roles'],
-    });
+  //   const [results, total] = await this.userRepository.findAndCount({
+  //     where: { isDeleted: false },
+  //     // order: { createdAt: 'DESC' },
+  //     skip: (page - 1) * limit,
+  //     take: limit,
+  //     relations: ['roles'],
+  //   });
 
-    return {
-      results,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
+  //   // map roles to role names
+
+  //   return {
+  //     results,
+  //     total,
+  //     page,
+  //     limit,
+  //     totalPages: Math.ceil(total / limit),
+  //   };
+  // }
 
   async findOne(id: number) {
     const user = await this.userRepository.findOne({
-      where: { id, isDeleted: false },
+      where: { id },
     });
     if (!user) {
       throw new Error('User not found');
@@ -62,8 +64,10 @@ export class UsersService {
     return await this.userRepository.softDelete(id);
   }
 
-  async findOneByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({ where: { email } });
+  async findOneByEmail(email: string) {
+    return await this.userRepository.findOne({
+      where: { email },
+    });
   }
 
   async seedRoles(): Promise<void> {

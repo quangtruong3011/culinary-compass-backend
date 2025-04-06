@@ -11,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 import { UserResponseDto } from '../users/dto/user-response.dto';
 import { jwtConstants, RoleEnum } from './constants/constants';
 import { RolesService } from '../roles/roles.service';
+import { SignUpResponseWithTokenDto } from './dto/sign-up-response.dto';
+import { SignInResponseDto } from './dto/sign-in-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,18 +24,18 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.findOneByEmail(email);
-    if (user && (await user.comparePassword(password))) {
+    if (user && bcrypt.compare(password, user.passwordHash)) {
       const { passwordHash, ...result } = user;
       return result;
     }
     return null;
   }
 
-  async login(user: User) {
+  async login(user: User): Promise<SignInResponseDto> {
     const payload = {
       email: user.email,
       sub: user.id,
-      roles: user.roles.map((role) => role.name),
+      roles: user.roles ? user.roles.map((role) => role.name) : [],
     };
     return {
       access_token: this.jwtService.sign(payload),
@@ -44,9 +46,7 @@ export class AuthService {
     };
   }
 
-  async register(
-    signUpDto: SignUpDto,
-  ): Promise<{ user: UserResponseDto; access_token: string }> {
+  async register(signUpDto: SignUpDto): Promise<SignUpResponseWithTokenDto> {
     const { email, password } = signUpDto;
 
     const existingUser = await this.userService.findOneByEmail(email);
@@ -70,9 +70,11 @@ export class AuthService {
     };
     const accessToken = this.jwtService.sign(payload);
 
-    const { passwordHash: _, ...userWithoutPassword } = newUser;
+    const { passwordHash: _ } = newUser;
     return {
-      user: userWithoutPassword,
+      id: newUser.id,
+      email: newUser.email,
+      roles: newUser.roles.map((role) => role.name),
       access_token: accessToken,
     };
   }

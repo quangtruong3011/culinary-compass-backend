@@ -7,19 +7,31 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TablesModule } from './modules/tables/tables.module';
+import { RestaurantsModule } from './modules/restaurants/restaurants.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformInterceptor } from './common';
 
 @Module({
   imports: [
+    // ConfigModule.forRoot({
+    //   envFilePath: ['.development.env'],
+    // }),
+    ConfigModule.forRoot(),
+    DatabaseModule,
+
     AuthModule,
     UsersModule,
     RolesModule,
-    DatabaseModule,
-    ConfigModule.forRoot({
-      envFilePath: ['.development.env'],
-    }),
+    RestaurantsModule,
     TablesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: TransformInterceptor,
+    // },
+  ],
 })
 export class AppModule {}

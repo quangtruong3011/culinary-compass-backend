@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import * as path from 'path';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Role } from 'src/modules/roles/entities/role.entity';
+import { Restaurant } from 'src/modules/restaurants/entities/restaurant.entity';
 
 export const databaseProviders = [
   {
@@ -18,7 +19,8 @@ export const databaseProviders = [
           // __dirname + '/../modules/entities/*.entity{.ts,.js}',
           // path.join(__dirname, '..', 'modules', 'entities', '*.entity{.ts,.js}'),
           User,
-          Role
+          Role,
+          Restaurant,
         ],
         synchronize: process.env.NODE_ENV === 'development', // Set to false in production
         logging: process.env.NODE_ENV === 'development',
