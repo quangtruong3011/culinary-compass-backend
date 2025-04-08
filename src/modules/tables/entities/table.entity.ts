@@ -16,9 +16,9 @@ export class Table extends BaseEntity {
   @Column({ type: 'nvarchar', length: 256 })
   name: string;
 
-  @Column({ type: 'int', length: 256 })
+  @Column({ type: 'int' })
   capacity: number;
 
-  @Column({ type: 'bit', length: 256 })
+  @Column({ type: 'bit', default: true })
   isAvailable: boolean;
 }
