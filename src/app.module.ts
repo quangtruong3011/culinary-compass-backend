@@ -10,6 +10,7 @@ import { TablesModule } from './modules/tables/tables.module';
 import { RestaurantsModule } from './modules/restaurants/restaurants.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TransformInterceptor } from './common';
     RolesModule,
     RestaurantsModule,
     TablesModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [

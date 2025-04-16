@@ -47,7 +47,7 @@ export class TablesService {
     });
 
     const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity } = table;
+      const { id, name, restaurantId, capacity} = table;
       return { id, name, restaurantId, capacity };
     });
 
@@ -105,7 +105,7 @@ export class TablesService {
     });
 
     const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity } = table;
+      const { id, name, restaurantId, capacity} = table;
       return { id, name, restaurantId, capacity };
     });
 

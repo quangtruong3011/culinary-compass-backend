@@ -4,6 +4,7 @@ import { User } from 'src/modules/users/entities/user.entity';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Restaurant } from 'src/modules/restaurants/entities/restaurant.entity';
 import { Table } from 'src/modules/tables/entities/table.entity';
+import { Booking } from 'src/modules/bookings/entities/booking.entity';
 
 export const databaseProviders = [
   {
@@ -22,7 +23,8 @@ export const databaseProviders = [
           User,
           Role,
           Restaurant,
-          Table
+          Table,
+          Booking
         ],
         synchronize: process.env.NODE_ENV === 'development', // Set to false in production
         logging: process.env.NODE_ENV === 'development',
