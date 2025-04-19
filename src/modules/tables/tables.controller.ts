@@ -11,7 +11,7 @@ export class TablesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiResponse({ status: 201, description: 'Role created successfully' })
+  @ApiResponse({ status: 201, description: 'Table created successfully' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 409, description: 'Conflict' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })

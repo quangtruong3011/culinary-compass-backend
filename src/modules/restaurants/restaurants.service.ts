@@ -1,35 +1,222 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
+import { GetRestaurantDto } from './dto/get-restaurant.dto';
+import {
+  PaginationOptions,
+  PaginationResult,
+} from 'src/shared/base/pagination.interface';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { RestaurantImagesService } from '../restaurant-images/restaurant-images.service';
+import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+import { v4 as uuidv4 } from 'uuid';
+
+const readFile = promisify(fs.readFile);
+const unlink = promisify(fs.unlink);
 
 @Injectable()
 export class RestaurantsService {
   constructor(
+    private readonly cloudinaryService: CloudinaryService,
     @Inject('RESTAURANT_REPOSITORY')
     private restaurantRepository: Repository<Restaurant>,
+    private readonly restaurantImagesService: RestaurantImagesService,
   ) {}
 
   async create(createRestaurantDto: CreateRestaurantDto, userId: number) {
-    // const restaurant = this.restaurantRepository.create(createRestaurantDto);
-    // return await this.restaurantRepository.save(restaurant);
-    return `${userId} created a restaurant`;
+    const newRestaurant = this.restaurantRepository.create({
+      ...createRestaurantDto,
+      ownerId: userId,
+      images: [],
+    });
+
+    const savedRestaurant = await this.restaurantRepository.save(newRestaurant);
+
+    if (!createRestaurantDto.images?.length) {
+      return savedRestaurant;
+    }
+
+    const tempDir = path.join(__dirname, '..', '..', 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const imageUploadResults = await Promise.all(
+      createRestaurantDto.images.map(async (file) => {
+        const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
+        const base64Data = file.replace(/^data:image\/jpeg;base64,/, '');
+
+        try {
+          await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
+          const result =
+            await this.cloudinaryService.uploadLocalFile(tempFilePath);
+          await unlink(tempFilePath);
+          return result;
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          await unlink(tempFilePath).catch(() => {});
+          throw new BadRequestException('Invalid file type');
+        }
+      }),
+    );
+
+    const imageEntities = imageUploadResults.map((result, index) =>
+      this.restaurantImagesService.create({
+        imageUrl: result.secure_url,
+        publicId: result.public_id,
+        restaurantId: savedRestaurant.id,
+        isMain: index === 0,
+      }),
+    );
+
+    await Promise.all(imageEntities);
+
+    return savedRestaurant;
   }
 
-  async findAll() {
-    return `This action returns all restaurants`;
+  async findAllRestaurantForAdmin(
+    options: PaginationOptions,
+    userId: number,
+  ): Promise<PaginationResult<GetRestaurantDto[]>> {
+    const {
+      page = Math.max(1, Number(options?.page)),
+      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
+      filter = options?.filter?.trim() || undefined,
+    } = options || {};
+
+    const [restaurants, total] = await this.restaurantRepository
+      .createQueryBuilder('restaurant')
+      .leftJoinAndSelect(
+        'restaurant.images',
+        'image',
+        'image.isMain = :isMain',
+        { isMain: true },
+      )
+      .where('restaurant.ownerId = :userId', { userId })
+      .andWhere(
+        filter ? 'restaurant.name ILIKE :filter' : '1=1',
+        filter ? { filter: `%${filter}%` } : {},
+      )
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const results = restaurants.map((restaurant) => {
+      return {
+        id: restaurant.id,
+        ownerId: restaurant.ownerId,
+        name: restaurant.name,
+        address: restaurant.address,
+        province: restaurant.province,
+        district: restaurant.district,
+        ward: restaurant.ward,
+        phone: restaurant.phone,
+        website: restaurant.website,
+        openingTime: restaurant.openingTime,
+        closingTime: restaurant.closingTime,
+        image: restaurant.images?.[0]?.imageUrl || '',
+      };
+    });
+
+    return {
+      results,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} restaurant`;
+  async findAllRestaurantForUser(
+    options: PaginationOptions,
+  ): Promise<PaginationResult<GetRestaurantDto[]>> {
+    const {
+      page = Math.max(1, Number(options?.page)),
+      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
+      filter = options?.filter?.trim() || undefined,
+    } = options || {};
+
+    const [restaurants, total] = await this.restaurantRepository
+      .createQueryBuilder('restaurant')
+      .leftJoinAndSelect(
+        'restaurant.images',
+        'image',
+        'image.isMain = :isMain',
+        { isMain: true },
+      )
+      .where(filter ? 'restaurant.name ILIKE :filter' : '1=1', {
+        filter: `%${filter}%`,
+      })
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const results = restaurants.map((restaurant) => {
+      return {
+        id: restaurant.id,
+        ownerId: restaurant.ownerId,
+        name: restaurant.name,
+        address: restaurant.address,
+        province: restaurant.province,
+        district: restaurant.district,
+        ward: restaurant.ward,
+        phone: restaurant.phone,
+        website: restaurant.website,
+        openingTime: restaurant.openingTime,
+        closingTime: restaurant.closingTime,
+        image: restaurant.images?.[0]?.imageUrl || '',
+      };
+    });
+
+    return {
+      results,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOneRestaurnForAdmin(id: number) {
+    const restaurant = await this.restaurantRepository.findOneBy({ id });
+    if (!restaurant) return new NotFoundException('Restaurant not found');
+
+    return restaurant;
   }
 
   async update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
-    return `This action updates a #${id} restaurant`;
+    const restaurant = await this.restaurantRepository.findOneBy({ id });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+
+    const { images, ...rest } = updateRestaurantDto;
+    const updatedRestaurant = this.restaurantRepository.merge(
+      restaurant,
+      {
+        ...rest,
+        images: images?.map((image) => ({ imageUrl: image })) || restaurant.images,
+      },
+    );
+
+    return await this.restaurantRepository.save(updatedRestaurant);
   }
 
-  async remove(id: number) {
-    return `This action removes a #${id} restaurant`;
+  async remove(id: number, userId: number) {
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id, ownerId: userId },
+      relations: ['images'],
+    });
+    if (!restaurant) {
+      return new NotFoundException('Restaurant not found');
+    }
+    await this.restaurantRepository.softDelete(id);
   }
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -51,7 +51,7 @@ export class UsersService {
       where: { id },
     });
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
     return user;
   }
@@ -67,6 +67,7 @@ export class UsersService {
   async findOneByEmail(email: string) {
     return await this.userRepository.findOne({
       where: { email },
+      relations: ['roles'],
     });
   }
 

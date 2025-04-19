@@ -2,7 +2,10 @@ import { Inject, Injectable, NotFoundException, Options } from '@nestjs/common';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { Table } from './entities/table.entity';
-import { PaginationOptions, PaginationResult } from 'src/shared/base/pagination.interface';
+import {
+  PaginationOptions,
+  PaginationResult,
+} from 'src/shared/base/pagination.interface';
 import { GetTableDto } from './dto/get-table.dto';
 import { ILike, Repository } from 'typeorm';
 
@@ -11,11 +14,14 @@ export class TablesService {
   constructor(
     @Inject('TABLE_REPOSITORY')
     private tableRepository: Repository<Table>,
-  ) { }
+  ) {}
 
   async create(createTableDto: CreateTableDto) {
     const existingTable = await this.tableRepository.findOne({
-      where: { name: createTableDto.name, restaurantId: createTableDto.restaurantId },
+      where: {
+        name: createTableDto.name,
+        restaurantId: createTableDto.restaurantId,
+      },
     });
     if (existingTable) {
       throw new NotFoundException(
@@ -23,17 +29,15 @@ export class TablesService {
       );
     }
     if (createTableDto.capacity < 1) {
-      throw new NotFoundException(
-        `Table capacity must be greater than 0`,
-      );
+      throw new NotFoundException(`Table capacity must be greater than 0`);
     }
-    
+
     return await this.tableRepository.save(createTableDto);
   }
 
   async findAll(
     options?: PaginationOptions,
-  ):Promise<PaginationResult<GetTableDto[]>> {
+  ): Promise<PaginationResult<GetTableDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
@@ -60,9 +64,10 @@ export class TablesService {
     };
   }
 
-  async findAllAdminByRestaurant(restaurantId : number, 
+  async findAllAdminByRestaurant(
+    restaurantId: number,
     options?: PaginationOptions,
-  ):Promise<PaginationResult<GetTableDto[]>> {
+  ): Promise<PaginationResult<GetTableDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
@@ -70,7 +75,9 @@ export class TablesService {
     } = options || {};
 
     const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter ? { name: ILike(`${filter}`), restaurantId } : { restaurantId },
+      where: filter
+        ? { name: ILike(`${filter}`), restaurantId }
+        : { restaurantId },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -88,10 +95,11 @@ export class TablesService {
       totalPages: Math.ceil(total / limit),
     };
   }
-  
-  async findAllCustomerByRestaurant(restaurantId : number,
+
+  async findAllCustomerByRestaurant(
+    restaurantId: number,
     options?: PaginationOptions,
-  ):Promise<PaginationResult<GetTableDto[]>> {
+  ): Promise<PaginationResult<GetTableDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
@@ -99,7 +107,9 @@ export class TablesService {
     } = options || {};
 
     const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter ? { name: ILike(`${filter}`), restaurantId, isAvailable: true } : { restaurantId, isAvailable: true },
+      where: filter
+        ? { name: ILike(`${filter}`), restaurantId, isAvailable: true }
+        : { restaurantId, isAvailable: true },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -118,11 +128,16 @@ export class TablesService {
     };
   }
   async findOne(id: number): Promise<GetTableDto> {
-    const table =await this.tableRepository.findOne({where: { id } });
+    const table = await this.tableRepository.findOne({ where: { id } });
     if (!table) {
       throw new NotFoundException(`Table with id ${id} not found`);
     }
-    return { id: table.id, name: table.name, restaurantId: table.restaurantId, capacity: table.capacity };
+    return {
+      id: table.id,
+      name: table.name,
+      restaurantId: table.restaurantId,
+      capacity: table.capacity,
+    };
   }
 
   async update(id: number, updateTableDto: UpdateTableDto) {
@@ -132,7 +147,10 @@ export class TablesService {
     }
 
     const existingTable = await this.tableRepository.findOne({
-      where: { name: updateTableDto.name, restaurantId: updateTableDto.restaurantId },
+      where: {
+        name: updateTableDto.name,
+        restaurantId: updateTableDto.restaurantId,
+      },
     });
 
     if (existingTable && existingTable.id !== id) {
@@ -141,9 +159,7 @@ export class TablesService {
       );
     }
     if ((updateTableDto.capacity ?? 0) < 1) {
-      throw new NotFoundException(
-        `Table capacity must be greater than 0`,
-      );
+      throw new NotFoundException(`Table capacity must be greater than 0`);
     }
     return await this.tableRepository.save({ ...table, ...updateTableDto });
   }
@@ -155,6 +171,4 @@ export class TablesService {
     }
     await this.tableRepository.remove(table);
   }
-
 }
-

@@ -34,9 +34,10 @@ export class AuthController {
     };
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Post('profile')
-  getProfile(@Req() req) {
+  @Post('me')
+  @HttpCode(HttpStatus.OK)
+  getMe(@Req() req) {
+    console.log('req.user', req.user);
     return req.user;
   }
 
@@ -48,11 +49,10 @@ export class AuthController {
   }
 
   @Public()
-  @Post('refresh')
+  @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body('refresh_token') refreshToken: string) {
-    const user = await this.authService.validateRefreshToken(refreshToken);
-    return this.authService.refreshToken(user);
+    return this.authService.refreshToken(refreshToken);
   }
 
   @Post('logout')

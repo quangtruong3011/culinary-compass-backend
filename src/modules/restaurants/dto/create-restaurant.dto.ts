@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumberString, IsString, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumberString,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 
 export class CreateRestaurantDto {
   @ApiProperty({
@@ -10,7 +16,7 @@ export class CreateRestaurantDto {
   ownerId: number;
 
   @ApiProperty({
-    example: 'Vịt 34',
+    example: 'Vịt 34 Cơ sở 7',
   })
   @IsNotEmpty()
   @IsString()
@@ -29,7 +35,21 @@ export class CreateRestaurantDto {
   })
   @IsNotEmpty()
   @IsString()
-  city: string;
+  province: string;
+
+  @ApiProperty({
+    example: 'Thanh Xuân',
+  })
+  @IsNotEmpty()
+  @IsString()
+  district: string;
+
+  @ApiProperty({
+    example: 'Thanh Xuân Trung',
+  })
+  @IsNotEmpty()
+  @IsString()
+  ward: string;
 
   @ApiProperty({
     example: '0976643434',
@@ -41,21 +61,24 @@ export class CreateRestaurantDto {
     example: 'https://vit34.com',
     required: false,
   })
-  @IsNotEmpty()
   @IsUrl()
   website: string;
 
   @ApiProperty({
-    example: '10:00 AM',
+    example: Date.now(),
   })
   @IsNotEmpty()
   @IsString()
   openingTime: string;
 
   @ApiProperty({
-    example: '11:00 PM',
+    example: Date.now(),
   })
   @IsNotEmpty()
   @IsString()
   closingTime: string;
+
+  @IsNotEmpty()
+  @IsArray()
+  images: string[];
 }

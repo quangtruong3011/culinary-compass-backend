@@ -1,13 +1,14 @@
-export class GetRestauntDto {
+export class GetRestaurantDto {
   id: number;
   ownerId: number;
   name: string;
   address: string;
-  city: string;
-  state: string;
-  country: string;
+  province: string;
+  district: string;
+  ward: string;
   phone: string;
-  website: string;
+  website?: string;
   openingTime: Date;
   closingTime: Date;
+  image: string;
 }

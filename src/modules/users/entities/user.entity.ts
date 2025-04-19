@@ -22,6 +22,14 @@ export class User extends BaseEntity {
   @Column({ type: 'nvarchar', nullable: true, unique: true })
   username: string;
 
+  @BeforeInsert()
+  async setUsernameFromEmail() {
+    if (!this.username) {
+      const emailParts = this.email.split('@');
+      this.username = emailParts[0];
+    }
+  }
+
   @Column({ type: 'nvarchar', unique: true })
   email: string;
 
