@@ -4,6 +4,8 @@ export class SignUpResponseDto {
   roles: string[];
 }
 
-export class SignUpResponseWithTokenDto extends SignUpResponseDto {
+export class SignUpResponseWithTokenDto {
+  user: SignUpResponseDto;
   access_token: string;
+  refresh_token: string;
 }

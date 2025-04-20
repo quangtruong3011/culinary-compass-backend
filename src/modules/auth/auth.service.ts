@@ -68,14 +68,25 @@ export class AuthService {
       sub: newUser.id,
       roles: newUser.roles.map((role) => role.name),
     };
+
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: jwtConstants.refreshSecret,
+      expiresIn: jwtConstants.refreshExpiresIn,
+    });
 
     const { passwordHash: _ } = newUser;
-    return {
+
+    const userResponse = {
       id: newUser.id,
       email: newUser.email,
       roles: newUser.roles.map((role) => role.name),
+    };
+
+    return {
+      user: userResponse,
       access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 

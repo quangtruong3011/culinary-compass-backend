@@ -30,8 +30,11 @@ export class Restaurant extends BaseEntity {
   @Column({ type: 'nvarchar', length: 256 })
   ward: string;
 
-  @Column({ type: 'nvarchar', length: 11 })
+  @Column({ type: 'nvarchar', length: 12 })
   phone: string;
+
+  @Column({ type: 'nvarchar', length: 1024 })
+  description: string;
 
   @Column({ type: 'nvarchar', length: 256, nullable: true })
   website: string;

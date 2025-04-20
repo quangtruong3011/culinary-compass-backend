@@ -7,7 +7,7 @@ export class CloudinaryService {
     return new Promise((resolve, reject) => {
       cloudinary.uploader.upload(
         filePath,
-        { folder: 'restaurants' },
+        { folder: 'culinary-compass' },
         (error, result) => {
           if (error) return reject(error);
           resolve(result);

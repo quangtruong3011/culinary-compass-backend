@@ -31,7 +31,7 @@ export class RestaurantsController {
     return this.restaurantsService.create(createRestaurantDto, userId);
   }
 
-  @Get()
+  @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
   findAllForAdmin(@Query() options: PaginationOptions, @Req() req) {
     const userId = req.user.userId;
@@ -39,9 +39,10 @@ export class RestaurantsController {
   }
 
   @Public()
-  @Get('/find-all-for-user')
+  @Get('find-all-for-user')
   @HttpCode(HttpStatus.OK)
   findAllForUser(@Query() options: PaginationOptions) {
+    console.log('Public endpoint accessed'); // Kiểm tra log này
     return this.restaurantsService.findAllRestaurantForUser(options);
   }
 
@@ -60,7 +61,13 @@ export class RestaurantsController {
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req) {
-    const userId = req.user.userId;
-    return this.restaurantsService.remove(+id, userId);
+    return this.restaurantsService.remove(+id, req.user.userId);
+  }
+
+  @Public()
+  @Get('find-one-for-user/:id')
+  @HttpCode(HttpStatus.OK)
+  findOneForUser(@Param('id') id: string) {
+    return this.restaurantsService.findOneRestaurantForUser(+id);
   }
 }

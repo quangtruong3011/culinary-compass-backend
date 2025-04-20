@@ -17,6 +17,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { RoleEnum } from '../auth/constants/constants';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 
 @Controller('users')
 export class UsersController {
@@ -29,16 +30,16 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  // @Get()
-  // @Roles(RoleEnum.ADMIN, RoleEnum.MODERATOR)
-  // findAll() {
-  //   return this.usersService.findAll();
-  // }
-
   @Get(':id')
   @Roles(RoleEnum.ADMIN, RoleEnum.MODERATOR)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
+  }
+
+  @Post('update-roles')
+  @Roles(RoleEnum.USER)
+  updateUserRoles(@Req() req, @Body() roleName: UpdateUserRoleDto) {
+    return this.usersService.updateUserRoles(req.user.userId, roleName.roleName);
   }
 
   @Patch(':id')

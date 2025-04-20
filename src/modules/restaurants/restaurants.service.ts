@@ -8,7 +8,6 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { ILike, Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
-import { GetRestaurantDto } from './dto/get-restaurant.dto';
 import {
   PaginationOptions,
   PaginationResult,
@@ -19,6 +18,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
+import { GetAllRestaurantForUserDto } from './dto/get-all-restaurant-for-user.dto';
+import { GetAllRestaurantForAdminDto } from './dto/get-all-restaurant-for-admin.dto';
+import { GetRestaurantForUserDto } from './dto/get-restaurant-for-user.dto';
 
 const readFile = promisify(fs.readFile);
 const unlink = promisify(fs.unlink);
@@ -86,7 +88,7 @@ export class RestaurantsService {
   async findAllRestaurantForAdmin(
     options: PaginationOptions,
     userId: number,
-  ): Promise<PaginationResult<GetRestaurantDto[]>> {
+  ): Promise<PaginationResult<GetAllRestaurantForAdminDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
@@ -113,17 +115,11 @@ export class RestaurantsService {
     const results = restaurants.map((restaurant) => {
       return {
         id: restaurant.id,
-        ownerId: restaurant.ownerId,
         name: restaurant.name,
         address: restaurant.address,
-        province: restaurant.province,
-        district: restaurant.district,
-        ward: restaurant.ward,
-        phone: restaurant.phone,
-        website: restaurant.website,
         openingTime: restaurant.openingTime,
         closingTime: restaurant.closingTime,
-        image: restaurant.images?.[0]?.imageUrl || '',
+        imageUrl: restaurant.images?.[0]?.imageUrl || '',
       };
     });
 
@@ -138,7 +134,7 @@ export class RestaurantsService {
 
   async findAllRestaurantForUser(
     options: PaginationOptions,
-  ): Promise<PaginationResult<GetRestaurantDto[]>> {
+  ): Promise<PaginationResult<GetAllRestaurantForUserDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
@@ -163,17 +159,11 @@ export class RestaurantsService {
     const results = restaurants.map((restaurant) => {
       return {
         id: restaurant.id,
-        ownerId: restaurant.ownerId,
         name: restaurant.name,
         address: restaurant.address,
-        province: restaurant.province,
-        district: restaurant.district,
-        ward: restaurant.ward,
-        phone: restaurant.phone,
-        website: restaurant.website,
         openingTime: restaurant.openingTime,
         closingTime: restaurant.closingTime,
-        image: restaurant.images?.[0]?.imageUrl || '',
+        imageUrl: restaurant.images?.[0]?.imageUrl || '',
       };
     });
 
@@ -193,18 +183,34 @@ export class RestaurantsService {
     return restaurant;
   }
 
+  async findOneRestaurantForUser(id: number): Promise<GetRestaurantForUserDto> {
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id },
+      relations: ['images'],
+    });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      description: restaurant.description,
+      openingTime: restaurant.openingTime,
+      closingTime: restaurant.closingTime,
+      imageUrl: restaurant.images.map((image) => image.imageUrl),
+    };
+  }
+
   async update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
     const restaurant = await this.restaurantRepository.findOneBy({ id });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
     const { images, ...rest } = updateRestaurantDto;
-    const updatedRestaurant = this.restaurantRepository.merge(
-      restaurant,
-      {
-        ...rest,
-        images: images?.map((image) => ({ imageUrl: image })) || restaurant.images,
-      },
-    );
+    const updatedRestaurant = this.restaurantRepository.merge(restaurant, {
+      ...rest,
+      images:
+        images?.map((image) => ({ imageUrl: image })) || restaurant.images,
+    });
 
     return await this.restaurantRepository.save(updatedRestaurant);
   }

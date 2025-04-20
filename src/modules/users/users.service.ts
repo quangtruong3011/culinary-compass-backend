@@ -1,14 +1,20 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import {
   PaginationOptions,
   PaginationResult,
 } from 'src/shared/base/pagination.interface';
 import { Role } from '../roles/entities/role.entity';
 import { RoleEnum } from '../auth/constants/constants';
+import { UpdateUserRoleResponseDto } from './dto/update-user-role.dto';
 
 @Injectable()
 export class UsersService {
@@ -24,28 +30,6 @@ export class UsersService {
     return await this.userRepository.save(user);
   }
 
-  // async findAll(options?: PaginationOptions): Promise<PaginationResult<User>> {
-  //   const { page = 1, limit = 10 } = options || {};
-
-  //   const [results, total] = await this.userRepository.findAndCount({
-  //     where: { isDeleted: false },
-  //     // order: { createdAt: 'DESC' },
-  //     skip: (page - 1) * limit,
-  //     take: limit,
-  //     relations: ['roles'],
-  //   });
-
-  //   // map roles to role names
-
-  //   return {
-  //     results,
-  //     total,
-  //     page,
-  //     limit,
-  //     totalPages: Math.ceil(total / limit),
-  //   };
-  // }
-
   async findOne(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -54,6 +38,39 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return user;
+  }
+
+  async updateUserRoles(
+    userId: number,
+    roleName: string,
+  ): Promise<UpdateUserRoleResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    user.roles.push(role);
+    await this.userRepository.save(user);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        roles: user.roles.map((role) => role.name),
+      },
+    };
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
