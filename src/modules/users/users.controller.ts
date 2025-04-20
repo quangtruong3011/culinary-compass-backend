@@ -10,6 +10,7 @@ import {
   HttpStatus,
   Req,
   UseGuards,
+  BadRequestException
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,10 +19,11 @@ import { RoleEnum } from '../auth/constants/constants';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { Gender } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
   @Roles(RoleEnum.ADMIN)
@@ -44,6 +46,9 @@ export class UsersController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    if (updateUserDto.gender && !Object.values(Gender).includes(updateUserDto.gender)) {
+      throw new BadRequestException('Gender must be either Male or Female');
+    }
     return this.usersService.update(+id, updateUserDto);
   }
 

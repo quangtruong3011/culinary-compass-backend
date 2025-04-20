@@ -14,6 +14,11 @@ import {
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
 
+export enum Gender {
+  MALE = 'Male',
+  FEMALE = 'Female',
+}
+
 @Entity('users')
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -57,6 +62,15 @@ export class User extends BaseEntity {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @Column({ type: 'nvarchar', nullable: true })
+  name: string;
+
+  @Column({ type: 'nvarchar', nullable: true })
+  phone: string;
+
+  @Column({ type: 'nvarchar', nullable: true })
+  gender: Gender;
 
   @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({
