@@ -22,15 +22,22 @@ export class BookingsController {
     return this.bookingsService.findAll(options);
   }
 
+  @Get('user/:userId')
+  @HttpCode(HttpStatus.OK)
+  findAllByUserId(@Param('userId') userId: number, @Query() options: PaginationOptions) {
+    return this.bookingsService.findAllByUserId(+userId, options);
+  }
+
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: number) {
     return this.bookingsService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
-    //return this.bookingsService.update(+id, updateBookingDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
+  //   return this.bookingsService.update(+id, updateBookingDto);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: number) {

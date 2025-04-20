@@ -7,7 +7,8 @@ import {
   PaginationResult,
 } from 'src/shared/base/pagination.interface';
 import { GetTableDto } from './dto/get-table.dto';
-import { ILike, Repository } from 'typeorm';
+import { ILike, Repository, Between, Not } from 'typeorm';
+
 
 @Injectable()
 export class TablesService {
@@ -153,7 +154,7 @@ export class TablesService {
       },
     });
 
-    if (existingTable && existingTable.id !== id) {
+    if (existingTable) {
       throw new NotFoundException(
         `Table with name ${updateTableDto.name} already exists`,
       );

@@ -16,36 +16,45 @@ export class BookingsService {
         private tableRepository: Repository<Table>,
     ) {}
     
-    async create(CreateBookingDto: CreateBookingDto){
+    async create(CreateBookingDto: CreateBookingDto) {
         const { userId, people, timeBooking, tableIds } = CreateBookingDto;
+    
+        // Kiểm tra timeBooking phải sau thời gian hiện tại
+        const currentTime = new Date();
+        if (new Date(timeBooking) <= currentTime) {
+            throw new NotFoundException("timeBooking must be in the future");
+        }
+
+        // Lấy danh sách bàn theo tableIds
         const tables = await this.tableRepository.findBy({ id: In(tableIds) });
         if (tables.length !== tableIds.length) {
             throw new NotFoundException("Some tables not found");
         }
-
-        for (const tableId of tableIds) {
-            const conflictingBookings = await this.bookingRepository
-            .createQueryBuilder("booking")
-            .leftJoin("booking.tables", "table")
-            .where("table.id = :tableId", { tableId })
-            .andWhere(":timeBooking BETWEEN DATEADD(HOUR, -2, booking.timeBooking) AND DATEADD(HOUR, 2, :timeBooking)",{timeBooking})
-            .getCount();
-            
-            if (conflictingBookings > 0) {
-                throw new NotFoundException(`Table with id ${tableId} is already booked`);
-            }
+    
+        // Tính tổng capacity của các bàn
+        const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0);
+    
+        // Kiểm tra tổng capacity có đủ cho số người không
+        if (totalCapacity < people) {
+            throw new NotFoundException(
+                `Total capacity of selected tables (${totalCapacity}) is less than the number of people (${people})`
+            );
         }
-
+    
+        // Kiểm tra số người phải lớn hơn 0
         if (people < 1) {
             throw new NotFoundException("People must be greater than 0");
         }
-
+    
+        // Tạo booking mới
         const booking = this.bookingRepository.create({
             userId,
             people,
             timeBooking,
             tables,
         });
+    
+        // Lưu booking
         return await this.bookingRepository.save(booking);
     }
 
@@ -62,6 +71,40 @@ export class BookingsService {
             'booking.id',
             'booking.userId',
             'booking.timeBooking',
+            'booking.timeCreate',
+            'booking.people',
+            'table.id',
+            'table.name',
+            'table.capacity',
+        ])
+        .skip((page - 1) * limit)
+        .take(limit);
+
+        const [results, total] = await bookings.getManyAndCount();
+
+        return {
+            results,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+    async findAllByUserId(userId: number, options?: PaginationOptions): Promise<PaginationResult<GetBookingDto[]>> {
+        const {
+            page = Math.max(1, Number(options?.page)),
+            limit = Math.min(Math.max(1, Number(options?.limit)), 100),
+            filter = options?.filter?.trim() || undefined,
+        } = options || {};
+
+        const bookings = this.bookingRepository.createQueryBuilder('booking')
+        .leftJoinAndSelect('booking.tables', 'table')
+        .where('booking.userId = :userId', { userId })
+        .select([
+            'booking.id',
+            'booking.userId',
+            'booking.timeBooking',
+            'booking.timeCreate',
             'booking.people',
             'table.id',
             'table.name',
@@ -81,21 +124,26 @@ export class BookingsService {
         };
     }
 
-    async findOne(id: number): Promise<GetBookingDto[]> {
-        const booking = await this.bookingRepository.findOne({where: {id}});
-        if (!booking) {
-            throw new NotFoundException(`Booking with id ${id} not found`);
-        }
-        return await this.bookingRepository.createQueryBuilder('booking')
+    async findOne(id: number): Promise<GetBookingDto> {
+        const booking = await this.bookingRepository.createQueryBuilder('booking')
         .leftJoinAndSelect('booking.tables', 'table')
         .where('booking.id = :id', { id })
         .select([
             'booking.id',
             'booking.userId',
+            'booking.timeBooking',
+            'booking.timeCreate',
+            'booking.people',
             'table.id',
             'table.name',
             'table.capacity',
-        ]).getMany();
+        ]).getOne();
+        
+        if (!booking) {
+            throw new NotFoundException(`Booking with id ${id} not found`);
+        }
+
+        return booking;
     }
 
     async remove(id: number) {

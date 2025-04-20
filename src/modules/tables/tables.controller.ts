@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Query, BadRequestException } from '@nestjs/common';
 import { TablesService } from './tables.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { PaginationOptions } from 'src/shared/base/pagination.interface';
 import { ApiResponse } from '@nestjs/swagger';
 import { And } from 'typeorm';
+import { parseISO, isValid } from 'date-fns';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @Controller('tables')
 export class TablesController {
-  constructor(private readonly tablesService: TablesService) {}
+  constructor(private readonly tablesService: TablesService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -17,7 +20,8 @@ export class TablesController {
   @ApiResponse({ status: 409, description: 'Conflict' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   create(@Body() createTableDto: CreateTableDto) {
-    return this.tablesService.create(createTableDto);
+    return console.log('Received createTableDto:', createTableDto);
+    // return this.tablesService.create(createTableDto);
   }
 
   @Get()
@@ -26,22 +30,30 @@ export class TablesController {
     return this.tablesService.findAll(options);
   }
 
-  @Get('admin/:restaurantId')
+  @Get('restaurant/:restaurantId')
   @HttpCode(HttpStatus.OK)
   findAllAdminByRestaurant(@Param('restaurantId') restaurantId: number, @Query() options: PaginationOptions) {
     if (!restaurantId && isNaN(+restaurantId)) {
       throw new Error('restaurantId must be a number');
     }
-    return this.tablesService.findAllAdminByRestaurant(+restaurantId, options);
+    return this.tablesService.findAllByRestaurant(+restaurantId, options);
   }
 
-  @Get('customer/:restaurantId')
+  @Get('available/:restaurantId')
   @HttpCode(HttpStatus.OK)
-  findAllCustomerByRestaurant(@Param('restaurantId') restaurantId: number, @Query() options: PaginationOptions) {
-    if (!restaurantId && isNaN(+restaurantId)) {
-      throw new Error('restaurantId must be a number');
+  async findAvailableTables(@Param('restaurantId') restaurantId: number,@Query('timeBooking') timeBookingStr: string) {
+    console.log('Received raw timeBooking:', timeBookingStr);
+
+    if (!timeBookingStr) {
+      throw new BadRequestException('timeBooking is required');
     }
-    return this.tablesService.findAllCustomerByRestaurant(+restaurantId, options);
+
+    const timeBooking = parseISO(timeBookingStr); // đảm bảo parse chuẩn định dạng ISO
+    if (!isValid(timeBooking)) {
+      throw new BadRequestException('Invalid timeBooking format');
+    }
+
+    return this.tablesService.findAvailableTables(+restaurantId,timeBooking);
   }
 
   @Get(':id')
