@@ -1,4 +1,4 @@
-import { Module, Res } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { MulterModule } from '@nestjs/platform-express';
 import { RestaurantImagesModule } from './modules/restaurant-images/restaurant-images.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
     RestaurantsModule,
     RestaurantImagesModule,
     TablesModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [

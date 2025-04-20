@@ -4,6 +4,7 @@ import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { PaginationOptions } from 'src/shared/base/pagination.interface';
 import { ApiResponse } from '@nestjs/swagger';
+import { And } from 'typeorm';
 
 @Controller('tables')
 export class TablesController {
@@ -23,6 +24,24 @@ export class TablesController {
   @HttpCode(HttpStatus.OK)
   findAll(@Query() options: PaginationOptions) {
     return this.tablesService.findAll(options);
+  }
+
+  @Get('admin/:restaurantId')
+  @HttpCode(HttpStatus.OK)
+  findAllAdminByRestaurant(@Param('restaurantId') restaurantId: number, @Query() options: PaginationOptions) {
+    if (!restaurantId && isNaN(+restaurantId)) {
+      throw new Error('restaurantId must be a number');
+    }
+    return this.tablesService.findAllAdminByRestaurant(+restaurantId, options);
+  }
+
+  @Get('customer/:restaurantId')
+  @HttpCode(HttpStatus.OK)
+  findAllCustomerByRestaurant(@Param('restaurantId') restaurantId: number, @Query() options: PaginationOptions) {
+    if (!restaurantId && isNaN(+restaurantId)) {
+      throw new Error('restaurantId must be a number');
+    }
+    return this.tablesService.findAllCustomerByRestaurant(+restaurantId, options);
   }
 
   @Get(':id')
