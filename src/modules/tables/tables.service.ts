@@ -84,3 +84,5 @@ export class TablesService {
     return await this.tableRepository.softDelete(id);
   }
 }
+
+

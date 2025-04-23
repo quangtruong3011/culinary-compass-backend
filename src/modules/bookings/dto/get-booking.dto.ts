@@ -3,12 +3,13 @@ import { Table } from 'typeorm';
 export class GetBookingDto {
   id: number;
   userId: number;
-  timeCreate: Date;
-  timeBooking: Date;
-  people: number;
-  tables: {
-    id: number;
-    name: string;
-    // capacity: number;
-  }[];
+  restaurantId: number;
+  name: string;
+  phone: string;
+  email?: string;
+  date: Date;
+  startTime: Date;
+  endTime: Date;
+  guests: number;
+  isConfirmed: boolean;
 }

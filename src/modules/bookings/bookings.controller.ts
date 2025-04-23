@@ -21,40 +21,43 @@ import { PaginationOptions } from 'src/shared/base/pagination.interface';
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
-  // @Post()
-  // @HttpCode(HttpStatus.CREATED)
-  // create(@Body() createBookingDto: CreateBookingDto) {
-  //   return this.bookingsService.create(createBookingDto);
-  // }
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() createBookingDto: CreateBookingDto) {
+    return this.bookingsService.create(createBookingDto);
+  }
 
-  // @Get()
-  // @HttpCode(HttpStatus.OK)
-  // findAll(@Query() options: PaginationOptions) {
-  //   return this.bookingsService.findAll(options);
-  // }
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  findAll(@Query() options: PaginationOptions) {
+    return this.bookingsService.findAll(options);
+  }
 
-  // @Get('user/:userId')
-  // @HttpCode(HttpStatus.OK)
-  // findAllByUserId(
-  //   @Param('userId') userId: number,
-  //   @Query() options: PaginationOptions,
-  // ) {
-  //   return this.bookingsService.findAllByUserId(+userId, options);
-  // }
+  @Get('user')
+  @HttpCode(HttpStatus.OK)
+  findAllByUserId(@Query() options: PaginationOptions & { userId: number }) {
+    return this.bookingsService.findAllByUserId(options);
+  }
 
-  // @Get(':id')
-  // @HttpCode(HttpStatus.OK)
-  // findOne(@Param('id') id: number) {
-  //   return this.bookingsService.findOne(+id);
-  // }
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  findOne(@Param('id') id: number) {
+    return this.bookingsService.findOne(+id);
+  }
 
-  // // @Patch(':id')
-  // // update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
-  // //   return this.bookingsService.update(+id, updateBookingDto);
-  // // }
+  @Patch(':id')
+  update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
+    return this.bookingsService.update(+id, updateBookingDto);
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: number) {
-  //   return this.bookingsService.remove(+id);
-  // }
+  @Patch('confirm/:id')
+  @HttpCode(HttpStatus.OK)
+  confirmBooking(@Param('id') id: number) {
+    return this.bookingsService.confirmBooking(+id);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    return this.bookingsService.remove(+id);
+  }
 }

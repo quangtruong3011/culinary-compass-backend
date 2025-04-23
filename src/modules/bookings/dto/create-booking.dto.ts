@@ -10,20 +10,52 @@ export class CreateBookingDto {
   userId: number;
 
   @ApiProperty({
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  restaurantId: number;
+
+  @ApiProperty({
+    example: 'Nguyen Van A',
+  })
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @ApiProperty({
+    example: '0123456789',
+  })
+  @IsNotEmpty()
+  @IsString()
+  phone: string;
+
+  @ApiProperty({
+    example: '',
+  })
+  email?: string;
+
+  @ApiProperty({
+    example: '2025-10-01',
+  })
+  @IsNotEmpty()
+  date: Date;
+
+  @ApiProperty({
+    example: '10:00:00',
+  })
+  @IsNotEmpty()
+  startTime: Date;
+
+  @ApiProperty({
+    example: '12:00:00',
+  })
+  @IsNotEmpty()
+  endTime: Date;
+
+  @ApiProperty({
     example: 2,
   })
   @IsNotEmpty()
-  people: number;
-
-  @ApiProperty({
-    example: '2024-10-01 19:00:00',
-  })
-  @IsNotEmpty()
-  timeBooking: Date;
-
-  @ApiProperty({
-    example: [1],
-  })
-  @IsNotEmpty()
-  tableIds: number[];
+  guests: number;
 }

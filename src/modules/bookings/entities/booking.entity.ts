@@ -7,6 +7,8 @@ import {
     ManyToMany,
     PrimaryGeneratedColumn,
     CreateDateColumn,
+    UpdateDateColumn,
+    DeleteDateColumn,
 } from 'typeorm';
 import { Table } from '../../tables/entities/table.entity';
 
@@ -18,14 +20,41 @@ export class Booking extends BaseEntity {
     @Column({ type: 'bigint' })
     userId: number;
 
-    @CreateDateColumn({ type: 'datetime' })
-    timeCreate: Date;
+    @Column({ type: 'bigint' })
+    restaurantId: number;
 
-    @Column({ type: 'int'})
-    people: number;
+    @Column({ type: 'nvarchar'})
+    name: string;
+
+    @Column({ type: 'nvarchar'})
+    phone: string;
+
+    @Column({ type: 'nvarchar', nullable: true })
+    email: string;
 
     @Column({ type: 'datetime' })
-    timeBooking: Date;
+    date: Date;
+
+    @Column({ type: 'datetime' })
+    startTime: Date;
+
+    @Column({ type: 'datetime' })
+    endTime: Date;
+
+    @Column({ type: 'bigint'})
+    guests: number;
+
+    @CreateDateColumn()
+    createAt: Date;
+
+    @UpdateDateColumn()
+    updateAt: Date;
+
+    @DeleteDateColumn({ nullable: true })
+    deleteAt: Date;
+
+    @Column({ type: 'bit', default:false })
+    isConfirmed: boolean;
 
     @ManyToMany(() => Table)
     @JoinTable({
