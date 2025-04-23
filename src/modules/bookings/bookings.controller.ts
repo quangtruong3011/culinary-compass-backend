@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpStatus,
+  HttpCode,
+  Query,
+} from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -22,10 +33,10 @@ export class BookingsController {
     return this.bookingsService.findAll(options);
   }
 
-  @Get('user/:userId')
+  @Get('user')
   @HttpCode(HttpStatus.OK)
-  findAllByUserId(@Param('userId') userId: number, @Query() options: PaginationOptions) {
-    return this.bookingsService.findAllByUserId(+userId, options);
+  findAllByUserId(@Query() options: PaginationOptions & { userId: number }) {
+    return this.bookingsService.findAllByUserId(options);
   }
 
   @Get(':id')
@@ -34,10 +45,16 @@ export class BookingsController {
     return this.bookingsService.findOne(+id);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
-  //   return this.bookingsService.update(+id, updateBookingDto);
-  // }
+  @Patch(':id')
+  update(@Param('id') id: number, @Body() updateBookingDto: UpdateBookingDto) {
+    return this.bookingsService.update(+id, updateBookingDto);
+  }
+
+  @Patch('confirm/:id')
+  @HttpCode(HttpStatus.OK)
+  confirmBooking(@Param('id') id: number) {
+    return this.bookingsService.confirmBooking(+id);
+  }
 
   @Delete(':id')
   remove(@Param('id') id: number) {

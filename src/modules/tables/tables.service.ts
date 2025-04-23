@@ -65,7 +65,7 @@ export class TablesService {
     };
   }
 
-  async findAllAdminByRestaurant(
+  async findAllByRestaurant(
     restaurantId: number,
     options?: PaginationOptions,
   ): Promise<PaginationResult<GetTableDto[]>> {
@@ -97,37 +97,60 @@ export class TablesService {
     };
   }
 
-  async findAllCustomerByRestaurant(
-    restaurantId: number,
-    options?: PaginationOptions,
-  ): Promise<PaginationResult<GetTableDto[]>> {
+  async findAvailableTables(restaurantId: number,timeBooking?: Date, options?: PaginationOptions): Promise<PaginationResult<GetTableDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
       filter = options?.filter?.trim() || undefined,
     } = options || {};
 
-    const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter
-        ? { name: ILike(`${filter}`), restaurantId, isAvailable: true }
-        : { restaurantId, isAvailable: true },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const queryBuilder = this.tableRepository.createQueryBuilder('table')
+      .leftJoin('booking_table', 'bt', 'bt.table_id = table.id')
+      .leftJoin('bookings', 'booking', 'booking.id = bt.booking_id')
+      .where('table.isAvailable = :isAvailable', { isAvailable: true })
+      .andWhere('table.restaurantId = :restaurantId', { restaurantId });
+  
+    if (timeBooking) {
+      const startOfDay = new Date(timeBooking);
+      startOfDay.setHours(0, 0, 0, 0); // Đặt thời gian về đầu ngày
+  
+      const endOfDay = new Date(timeBooking);
+      endOfDay.setHours(23, 59, 59, 999); // Đặt thời gian về cuối ngày
+  
+      queryBuilder.andWhere(
+        `(booking.timeBooking IS NULL OR booking.timeBooking NOT BETWEEN :startOfDay AND :endOfDay)`,
+        { startOfDay, endOfDay },
+      );
+    }
+  
+    if (filter) {
+      queryBuilder.andWhere('table.name ILIKE :filter', { filter: `%${filter}%` });
+    }
 
-    const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity} = table;
-      return { id, name, restaurantId, capacity };
-    });
+    queryBuilder.skip((page - 1) * limit).take(limit);
 
-    return {
-      results,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    try {
+      const [tables, total] = await queryBuilder.getManyAndCount();
+
+      const results = tables.map((table) => {
+        const { id, name, restaurantId, capacity } = table;
+        return { id, name, restaurantId, capacity };
+      });
+      
+      return {
+        results,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+
+    } catch (error) {
+      console.error('Error in findAvailableTables:', error);
+      throw new Error('Internal Server Error');
+    }
   }
+
   async findOne(id: number): Promise<GetTableDto> {
     const table = await this.tableRepository.findOne({ where: { id } });
     if (!table) {
@@ -173,3 +196,5 @@ export class TablesService {
     await this.tableRepository.remove(table);
   }
 }
+
+

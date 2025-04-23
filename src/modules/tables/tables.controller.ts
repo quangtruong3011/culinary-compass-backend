@@ -5,8 +5,9 @@ import { UpdateTableDto } from './dto/update-table.dto';
 import { PaginationOptions } from 'src/shared/base/pagination.interface';
 import { ApiResponse } from '@nestjs/swagger';
 import { And } from 'typeorm';
-import { parseISO, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
 import { Public } from '../auth/decorators/public.decorator';
+import { parseISO } from 'date-fns/parseISO';
 
 @Public()
 @Controller('tables')
@@ -20,8 +21,7 @@ export class TablesController {
   @ApiResponse({ status: 409, description: 'Conflict' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   create(@Body() createTableDto: CreateTableDto) {
-    return console.log('Received createTableDto:', createTableDto);
-    // return this.tablesService.create(createTableDto);
+    return this.tablesService.create(createTableDto);
   }
 
   @Get()
@@ -41,9 +41,7 @@ export class TablesController {
 
   @Get('available/:restaurantId')
   @HttpCode(HttpStatus.OK)
-  async findAvailableTables(@Param('restaurantId') restaurantId: number,@Query('timeBooking') timeBookingStr: string) {
-    console.log('Received raw timeBooking:', timeBookingStr);
-
+  async findAvailableTables(@Param('restaurantId') restaurantId: number,@Query('timeBooking') timeBookingStr: string, @Query() options: PaginationOptions) {
     if (!timeBookingStr) {
       throw new BadRequestException('timeBooking is required');
     }
@@ -53,7 +51,7 @@ export class TablesController {
       throw new BadRequestException('Invalid timeBooking format');
     }
 
-    return this.tablesService.findAvailableTables(+restaurantId,timeBooking);
+    return this.tablesService.findAvailableTables(+restaurantId,timeBooking, options);
   }
 
   @Get(':id')
