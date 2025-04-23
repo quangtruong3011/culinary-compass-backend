@@ -5,6 +5,9 @@ import {
   PrimaryGeneratedColumn,
   ManyToMany,
   JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Booking } from '../../bookings/entities/booking.entity';
 
@@ -20,11 +23,20 @@ export class Table extends BaseEntity {
   name: string;
 
   @Column({ type: 'int' })
-  capacity: number;
+  numberOfSeats: number;
 
   @Column({ type: 'bit', default: true })
   isAvailable: boolean;
 
   @ManyToMany(() => Booking, (booking) => booking.tables)
-    bookings: Booking[];
+  bookings: Booking[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

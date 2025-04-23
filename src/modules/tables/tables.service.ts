@@ -7,8 +7,7 @@ import {
   PaginationResult,
 } from 'src/shared/base/pagination.interface';
 import { GetTableDto } from './dto/get-table.dto';
-import { ILike, Repository, Between, Not } from 'typeorm';
-
+import { ILike, Repository } from 'typeorm';
 
 @Injectable()
 export class TablesService {
@@ -18,42 +17,39 @@ export class TablesService {
   ) {}
 
   async create(createTableDto: CreateTableDto) {
-    const existingTable = await this.tableRepository.findOne({
-      where: {
-        name: createTableDto.name,
-        restaurantId: createTableDto.restaurantId,
-      },
-    });
-    if (existingTable) {
-      throw new NotFoundException(
-        `Table with name ${createTableDto.name} already exists`,
-      );
-    }
-    if (createTableDto.capacity < 1) {
-      throw new NotFoundException(`Table capacity must be greater than 0`);
-    }
-
     return await this.tableRepository.save(createTableDto);
   }
 
   async findAll(
-    options?: PaginationOptions,
+    options?: PaginationOptions & { restaurantId?: number },
   ): Promise<PaginationResult<GetTableDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
+      restaurantId = options?.restaurantId,
     } = options || {};
 
+    const whereConditions: any = {};
+
+    if (restaurantId) {
+      whereConditions.restaurantId = restaurantId;
+    }
+
+    if (filterText) {
+      whereConditions.name = ILike(`%${filterText}%`);
+    }
+
     const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter ? { name: ILike(`${filter}`) } : {},
+      where: whereConditions,
       skip: (page - 1) * limit,
       take: limit,
+      order: { name: 'ASC' },
     });
 
     const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity} = table;
-      return { id, name, restaurantId, capacity };
+      const { id, name, restaurantId, numberOfSeats, isAvailable } = table;
+      return { id, name, restaurantId, numberOfSeats, isAvailable };
     });
 
     return {
@@ -65,111 +61,26 @@ export class TablesService {
     };
   }
 
-  async findAllAdminByRestaurant(
-    restaurantId: number,
-    options?: PaginationOptions,
-  ): Promise<PaginationResult<GetTableDto[]>> {
-    const {
-      page = Math.max(1, Number(options?.page)),
-      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
-    } = options || {};
-
-    const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter
-        ? { name: ILike(`${filter}`), restaurantId }
-        : { restaurantId },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity } = table;
-      return { id, name, restaurantId, capacity };
-    });
-
-    return {
-      results,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  async findAllCustomerByRestaurant(
-    restaurantId: number,
-    options?: PaginationOptions,
-  ): Promise<PaginationResult<GetTableDto[]>> {
-    const {
-      page = Math.max(1, Number(options?.page)),
-      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
-    } = options || {};
-
-    const [tables, total] = await this.tableRepository.findAndCount({
-      where: filter
-        ? { name: ILike(`${filter}`), restaurantId, isAvailable: true }
-        : { restaurantId, isAvailable: true },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    const results = tables.map((table) => {
-      const { id, name, restaurantId, capacity} = table;
-      return { id, name, restaurantId, capacity };
-    });
-
-    return {
-      results,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
   async findOne(id: number): Promise<GetTableDto> {
-    const table = await this.tableRepository.findOne({ where: { id } });
+    const table = await this.tableRepository.findOneBy({ id });
     if (!table) {
       throw new NotFoundException(`Table with id ${id} not found`);
     }
-    return {
-      id: table.id,
-      name: table.name,
-      restaurantId: table.restaurantId,
-      capacity: table.capacity,
-    };
+    return table;
   }
 
   async update(id: number, updateTableDto: UpdateTableDto) {
-    const table = await this.tableRepository.findOne({ where: { id } });
-    if (!table) {
-      throw new NotFoundException(`Table with id ${id} not found`);
-    }
-
-    const existingTable = await this.tableRepository.findOne({
-      where: {
-        name: updateTableDto.name,
-        restaurantId: updateTableDto.restaurantId,
-      },
-    });
-
-    if (existingTable) {
-      throw new NotFoundException(
-        `Table with name ${updateTableDto.name} already exists`,
-      );
-    }
-    if ((updateTableDto.capacity ?? 0) < 1) {
-      throw new NotFoundException(`Table capacity must be greater than 0`);
-    }
-    return await this.tableRepository.save({ ...table, ...updateTableDto });
+    const table = await this.tableRepository.findOneBy({ id });
+    if (!table) throw new NotFoundException(`Table with id ${id} not found`);
+    const updatedTable = this.tableRepository.merge(table, updateTableDto);
+    return await this.tableRepository.save(updatedTable);
   }
 
   async remove(id: number) {
-    const table = await this.tableRepository.findOne({ where: { id } });
+    const table = await this.tableRepository.findOneBy({ id });
     if (!table) {
       throw new NotFoundException(`Table with id ${id} not found`);
     }
-    await this.tableRepository.remove(table);
+    return await this.tableRepository.softDelete(id);
   }
 }

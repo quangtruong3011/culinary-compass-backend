@@ -35,7 +35,6 @@ export class RestaurantImagesService {
     if (!restaurantImage) {
       throw new NotFoundException('Restaurant image not found');
     }
-    // await this.cloudinaryService.deleteImage(restaurantImage.publicId);
     await this.restaurantImageRepository.delete(id);
   }
 }

@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -13,6 +14,7 @@ import { RolesService } from '../roles/roles.service';
 import { SignUpResponseWithTokenDto } from './dto/sign-up-response.dto';
 import { SignInResponseDto } from './dto/sign-in-response.dto';
 import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto';
+import { GetUserDto } from '../users/dto/get-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -43,6 +45,21 @@ export class AuthService {
         secret: jwtConstants.refreshSecret,
         expiresIn: jwtConstants.refreshExpiresIn,
       }),
+    };
+  }
+
+  async getMe(email: string): Promise<GetUserDto> {
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      gender: user.gender,
+      roles: user.roles ? user.roles.map((role) => role.name) : [],
     };
   }
 

@@ -80,5 +80,9 @@ export class CreateRestaurantDto {
 
   @IsNotEmpty()
   @IsArray()
-  images: string[];
+  images: ImageDto[];
+}
+
+class ImageDto {
+  uri: string;
 }

@@ -41,11 +41,11 @@ export class RolesService {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
     } = options || {};
 
     const [roles, total] = await this.roleRepository.findAndCount({
-      where: filter ? { name: ILike(`${filter}`) } : {},
+      where: filterText ? { name: ILike(`${filterText}`) } : {},
       skip: (page - 1) * limit,
       take: limit,
     });

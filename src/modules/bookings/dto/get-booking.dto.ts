@@ -1,14 +1,14 @@
-import { Table } from "typeorm";
+import { Table } from 'typeorm';
 
 export class GetBookingDto {
+  id: number;
+  userId: number;
+  timeCreate: Date;
+  timeBooking: Date;
+  people: number;
+  tables: {
     id: number;
-    userId: number;
-    timeCreate: Date;
-    timeBooking: Date;
-    people: number;
-    tables: {
-        id: number;
-        name: string;
-        capacity: number;
-    }[];
-  }
+    name: string;
+    // capacity: number;
+  }[];
+}

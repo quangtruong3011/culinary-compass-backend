@@ -2,9 +2,12 @@ import { RestaurantImage } from 'src/modules/restaurant-images/entities/restaura
 import {
   BaseEntity,
   Column,
+  CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('restaurants')
@@ -44,6 +47,18 @@ export class Restaurant extends BaseEntity {
 
   @Column({ type: 'nvarchar' })
   closingTime: Date;
+
+  @Column({ type: 'bit', default: true })
+  isActive: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
 
   @OneToMany(
     () => RestaurantImage,
