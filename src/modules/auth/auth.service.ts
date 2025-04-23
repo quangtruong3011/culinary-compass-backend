@@ -166,8 +166,4 @@ export class AuthService {
       expiresIn: jwtConstants.refreshExpiresIn,
     });
   }
-
-  async getMe(): Promise<any> {
-    
-  }
 }
