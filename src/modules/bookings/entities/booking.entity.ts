@@ -56,6 +56,9 @@ export class Booking extends BaseEntity {
     @Column({ type: 'bit', default:false })
     isConfirmed: boolean;
 
+    @Column({ type: 'bit', default:false })
+    isDeleted: boolean;
+
     @ManyToMany(() => Table)
     @JoinTable({
         name: 'booking_table', 

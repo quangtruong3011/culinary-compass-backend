@@ -67,10 +67,13 @@ export class BookingsService {
         'booking.name',
         'booking.phone',
         'booking.email',
+        'booking.createAt',
         'booking.date',
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
+        'booking.isConfirmed',
+        'booking.isDeleted',
         'table.id',
         'table.name',
         'table.capacity',
@@ -115,11 +118,13 @@ export class BookingsService {
         'booking.id',
         'booking.userId',
         'booking.restaurantId',
+        'booking.createAt',
         'booking.date',
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
         'booking.isConfirmed',
+        'booking.isDeleted',
       ])
       .skip((page - 1) * limit)
       .take(limit);
@@ -145,10 +150,13 @@ export class BookingsService {
         'booking.name',
         'booking.phone',
         'booking.email',
+        'booking.createAt',
         'booking.date',
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
+        'booking.isConfirmed',
+        'booking.isDeleted',
       ])
       .getOne();
 
@@ -183,6 +191,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException(`Booking with id ${id} not found`);
     }
-    await this.bookingRepository.remove(booking);
+    booking.isDeleted = true;
+    return await this.bookingRepository.save(booking);
   }
 }

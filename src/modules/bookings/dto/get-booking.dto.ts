@@ -12,4 +12,5 @@ export class GetBookingDto {
     endTime: Date;
     guests: number;
     isConfirmed: boolean;
+    isDeleted: boolean;
   }
