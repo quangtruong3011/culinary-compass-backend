@@ -25,7 +25,7 @@ export class PaginationOptions {
   @ApiPropertyOptional({})
   @IsOptional()
   @IsString()
-  filter?: string;
+  filterText?: string;
 }
 
 export class PaginationResult<T> {

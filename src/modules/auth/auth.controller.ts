@@ -37,8 +37,7 @@ export class AuthController {
   @Post('me')
   @HttpCode(HttpStatus.OK)
   getMe(@Req() req) {
-    console.log('req.user', req.user);
-    return req.user;
+    return this.authService.getMe(req.user.email);
   }
 
   @Public()

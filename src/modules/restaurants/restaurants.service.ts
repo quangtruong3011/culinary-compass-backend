@@ -55,7 +55,7 @@ export class RestaurantsService {
     const imageUploadResults = await Promise.all(
       createRestaurantDto.images.map(async (file) => {
         const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
-        const base64Data = file.replace(/^data:image\/jpeg;base64,/, '');
+        const base64Data = file.uri.replace(/^data:image\/jpeg;base64,/, '');
 
         try {
           await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
@@ -92,7 +92,7 @@ export class RestaurantsService {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
     } = options || {};
 
     const [restaurants, total] = await this.restaurantRepository
@@ -105,8 +105,8 @@ export class RestaurantsService {
       )
       .where('restaurant.ownerId = :userId', { userId })
       .andWhere(
-        filter ? 'restaurant.name ILIKE :filter' : '1=1',
-        filter ? { filter: `%${filter}%` } : {},
+        filterText ? 'restaurant.name ILIKE :filter' : '1=1',
+        filterText ? { filterText: `%${filterText}%` } : {},
       )
       .skip((page - 1) * limit)
       .take(limit)
@@ -138,7 +138,7 @@ export class RestaurantsService {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
     } = options || {};
 
     const [restaurants, total] = await this.restaurantRepository
@@ -149,9 +149,11 @@ export class RestaurantsService {
         'image.isMain = :isMain',
         { isMain: true },
       )
-      .where(filter ? 'restaurant.name ILIKE :filter' : '1=1', {
-        filter: `%${filter}%`,
-      })
+      .where(
+        filterText ? 'LOWER(restaurant.name) LIKE LOWER(:filter)' : '1=1',
+        filterText ? { filter: `%${filterText}%` } : {},
+      )
+      .orderBy('restaurant.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
@@ -202,17 +204,18 @@ export class RestaurantsService {
   }
 
   async update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
-    const restaurant = await this.restaurantRepository.findOneBy({ id });
-    if (!restaurant) throw new NotFoundException('Restaurant not found');
+    // const restaurant = await this.restaurantRepository.findOneBy({ id });
+    // if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    const { images, ...rest } = updateRestaurantDto;
-    const updatedRestaurant = this.restaurantRepository.merge(restaurant, {
-      ...rest,
-      images:
-        images?.map((image) => ({ imageUrl: image })) || restaurant.images,
-    });
+    // const { images, ...rest } = updateRestaurantDto;
+    // const updatedRestaurant = this.restaurantRepository.merge(restaurant, {
+    //   ...rest,
+    //   images:
+    //     images?.map((image) => ({ imageUrl: image })) || restaurant.images,
+    // });
 
-    return await this.restaurantRepository.save(updatedRestaurant);
+    // return await this.restaurantRepository.save(updatedRestaurant);
+    return 'Not yet implemented';
   }
 
   async remove(id: number, userId: number) {
@@ -224,5 +227,12 @@ export class RestaurantsService {
       return new NotFoundException('Restaurant not found');
     }
     await this.restaurantRepository.softDelete(id);
+  }
+
+  private removeAccents(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   }
 }

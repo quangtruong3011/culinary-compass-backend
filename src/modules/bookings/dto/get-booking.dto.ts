@@ -1,4 +1,4 @@
-import { Table } from "typeorm";
+import { Table } from 'typeorm';
 
 export class GetBookingDto {
     id: number;

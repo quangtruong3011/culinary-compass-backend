@@ -54,7 +54,7 @@ export class BookingsService {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
     } = options || {};
 
     const bookings = this.bookingRepository
@@ -97,14 +97,14 @@ export class BookingsService {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filter = options?.filter?.trim() || undefined,
+      filterText = options?.filterText?.trim() || undefined,
       userId = options?.userId,
     } = options || {};
 
     const whereCondition = {};
 
-    if (filter) {
-      whereCondition['name'] = ILike(`%${filter}%`);
+    if (filterText) {
+      whereCondition['name'] = ILike(`%${filterText}%`);
     }
 
     if (userId) {

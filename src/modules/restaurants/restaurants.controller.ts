@@ -27,22 +27,19 @@ export class RestaurantsController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('images'))
   async create(@Body() createRestaurantDto: CreateRestaurantDto, @Req() req) {
-    const userId = req.user.userId;
-    return this.restaurantsService.create(createRestaurantDto, userId);
+    return this.restaurantsService.create(createRestaurantDto, req.user.id);
   }
 
   @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
   findAllForAdmin(@Query() options: PaginationOptions, @Req() req) {
-    const userId = req.user.userId;
-    return this.restaurantsService.findAllRestaurantForAdmin(options, userId);
+    return this.restaurantsService.findAllRestaurantForAdmin(options, req.user.id);
   }
 
   @Public()
   @Get('find-all-for-user')
   @HttpCode(HttpStatus.OK)
   findAllForUser(@Query() options: PaginationOptions) {
-    console.log('Public endpoint accessed'); // Kiểm tra log này
     return this.restaurantsService.findAllRestaurantForUser(options);
   }
 
@@ -61,7 +58,7 @@ export class RestaurantsController {
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req) {
-    return this.restaurantsService.remove(+id, req.user.userId);
+    return this.restaurantsService.remove(+id, req.user.id);
   }
 
   @Public()
