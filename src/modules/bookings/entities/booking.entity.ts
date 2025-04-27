@@ -53,11 +53,8 @@ export class Booking extends BaseEntity {
     @DeleteDateColumn({ nullable: true })
     deleteAt: Date;
 
-    @Column({ type: 'bit', default:false })
-    isConfirmed: boolean;
-
-    @Column({ type: 'bit', default:false })
-    isDeleted: boolean;
+    @Column({ type: 'nvarchar', default: 'pending' })
+    status: string;
 
     @ManyToMany(() => Table)
     @JoinTable({

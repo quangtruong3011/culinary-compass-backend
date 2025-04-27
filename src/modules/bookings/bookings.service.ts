@@ -72,8 +72,7 @@ export class BookingsService {
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
-        'booking.isConfirmed',
-        'booking.isDeleted',
+        'booking.status',
         'table.id',
         'table.name',
         'table.capacity',
@@ -123,8 +122,58 @@ export class BookingsService {
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
-        'booking.isConfirmed',
-        'booking.isDeleted',
+        'booking.status',
+      ])
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [results, total] = await bookings.getManyAndCount();
+
+    return {
+      results,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findAllByRestaurantId(
+    options?: PaginationOptions & { restaurantId?: number },
+  ): Promise<PaginationResult<GetBookingDto[]>> {
+    const {
+      page = Math.max(1, Number(options?.page)),
+      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
+      filterText = options?.filterText?.trim() || undefined,
+      restaurantId = options?.restaurantId,
+    } = options || {};
+
+    const whereCondition = {};
+
+    if (filterText) {
+      whereCondition['name'] = ILike(`%${filterText}%`);
+    }
+
+    if (restaurantId) {
+      whereCondition['restaurantId'] = restaurantId;
+    }
+
+    const bookings = this.bookingRepository
+      .createQueryBuilder('booking')
+      .where(whereCondition)
+      .select([
+        'booking.id',
+        'booking.userId',
+        'booking.restaurantId',
+        'booking.name',
+        'booking.phone',
+        'booking.email',
+        'booking.createAt',
+        'booking.date',
+        'booking.startTime',
+        'booking.endTime',
+        'booking.guests',
+        'booking.status',
       ])
       .skip((page - 1) * limit)
       .take(limit);
@@ -155,8 +204,7 @@ export class BookingsService {
         'booking.startTime',
         'booking.endTime',
         'booking.guests',
-        'booking.isConfirmed',
-        'booking.isDeleted',
+        'booking.status',
       ])
       .getOne();
 
@@ -177,21 +225,22 @@ export class BookingsService {
     return await this.bookingRepository.save(booking);
   }
 
-  async confirmBooking(id: number) {
+  async statusBooking(id: number, status: 'pending' | 'confirmed' | 'cancelled' | 'completed') {
     const booking = await this.bookingRepository.findOne({ where: { id } });
     if (!booking) {
       throw new NotFoundException(`Booking with id ${id} not found`);
     }
-    booking.isConfirmed = true;
+    booking.status = status;
+    
     return await this.bookingRepository.save(booking);
   }
 
-  async remove(id: number) {
-    const booking = await this.bookingRepository.findOne({ where: { id } });
-    if (!booking) {
-      throw new NotFoundException(`Booking with id ${id} not found`);
-    }
-    booking.isDeleted = true;
-    return await this.bookingRepository.save(booking);
-  }
+  // async remove(id: number) {
+  //   const booking = await this.bookingRepository.findOne({ where: { id } });
+  //   if (!booking) {
+  //     throw new NotFoundException(`Booking with id ${id} not found`);
+  //   }
+  //   booking.isDeleted = true;
+  //   return await this.bookingRepository.save(booking);
+  // }
 }

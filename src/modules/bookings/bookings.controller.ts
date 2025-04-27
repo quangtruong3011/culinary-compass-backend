@@ -39,6 +39,12 @@ export class BookingsController {
     return this.bookingsService.findAllByUserId(options);
   }
 
+  @Get('admin')
+  @HttpCode(HttpStatus.OK)
+  findAllByAdmin(@Query() options: PaginationOptions & { restaurantId: number }) {
+    return this.bookingsService.findAllByRestaurantId(options);
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: number) {
@@ -50,14 +56,14 @@ export class BookingsController {
     return this.bookingsService.update(+id, updateBookingDto);
   }
 
-  @Patch('confirm/:id')
+  @Patch('status/:id')
   @HttpCode(HttpStatus.OK)
-  confirmBooking(@Param('id') id: number) {
-    return this.bookingsService.confirmBooking(+id);
+  statusBooking(@Param('id') id: number, @Body('status') status: 'confirmed' | 'cancelled' | 'pending' | 'completed') {
+    return this.bookingsService.statusBooking(+id, status);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.bookingsService.remove(+id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: number) {
+  //   return this.bookingsService.remove(+id);
+  // }
 }
