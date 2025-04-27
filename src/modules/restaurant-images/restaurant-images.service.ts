@@ -1,8 +1,6 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateRestaurantImageDto } from './dto/create-restaurant-image.dto';
-import { UpdateRestaurantImageDto } from './dto/update-restaurant-image.dto';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { RestaurantImage } from './entities/restaurant-image.entity';
 
 @Injectable()
@@ -12,29 +10,22 @@ export class RestaurantImagesService {
     private restaurantImageRepository: Repository<RestaurantImage>,
   ) {}
 
-  create(createRestaurantImageDto: CreateRestaurantImageDto) {
-    return this.restaurantImageRepository.save(createRestaurantImageDto);
-  }
-
-  findAll() {
-    return `This action returns all restaurantImages`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} restaurantImage`;
-  }
-
-  update(id: number, updateRestaurantImageDto: UpdateRestaurantImageDto) {
-    return `This action updates a #${id} restaurantImage`;
+  async create(createRestaurantImageDto: CreateRestaurantImageDto) {
+    return await this.restaurantImageRepository.save(createRestaurantImageDto);
   }
 
   async remove(id: number) {
-    const restaurantImage = await this.restaurantImageRepository.findOne({
-      where: { id },
-    });
-    if (!restaurantImage) {
-      throw new NotFoundException('Restaurant image not found');
-    }
-    await this.restaurantImageRepository.delete(id);
+    return await this.restaurantImageRepository.delete(id);
+  }
+
+  async createWithRunner(
+    queryRunner: QueryRunner,
+    createRestaurantImageDto: CreateRestaurantImageDto,
+  ) {
+    const image = queryRunner.manager.create(
+      RestaurantImage,
+      createRestaurantImageDto,
+    );
+    return queryRunner.manager.save(RestaurantImage, image);
   }
 }

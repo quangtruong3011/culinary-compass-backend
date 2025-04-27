@@ -33,7 +33,10 @@ export class RestaurantsController {
   @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
   findAllForAdmin(@Query() options: PaginationOptions, @Req() req) {
-    return this.restaurantsService.findAllRestaurantForAdmin(options, req.user.id);
+    return this.restaurantsService.findAllRestaurantForAdmin(
+      options,
+      req.user.id,
+    );
   }
 
   @Public()

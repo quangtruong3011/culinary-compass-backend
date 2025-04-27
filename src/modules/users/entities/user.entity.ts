@@ -13,10 +13,12 @@ import {
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
+import { Exclude } from 'class-transformer';
 
-export enum Gender {
+enum Gender {
   MALE = 'Male',
   FEMALE = 'Female',
+  OTHER = 'Other',
 }
 
 @Entity('users')
@@ -24,20 +26,10 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ type: 'nvarchar', nullable: true, unique: true })
-  username: string;
-
-  @BeforeInsert()
-  async setUsernameFromEmail() {
-    if (!this.username) {
-      const emailParts = this.email.split('@');
-      this.username = emailParts[0];
-    }
-  }
-
   @Column({ type: 'nvarchar', unique: true })
   email: string;
 
+  @Exclude()
   @Column({ type: 'nvarchar' })
   passwordHash: string;
 
@@ -47,9 +39,20 @@ export class User extends BaseEntity {
     this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
   }
 
-  // async comparePassword(password: string): Promise<boolean> {
-  //   return await bcrypt.compare(password, this.passwordHash);
-  // }
+  @Column({ type: 'nvarchar', length: 255, nullable: true })
+  name: string;
+
+  @Column({ type: 'nvarchar', length: 10, nullable: true })
+  phone: string;
+
+  @Column({ type: 'nvarchar', enum: Gender, nullable: true })
+  gender: string;
+
+  @Column({ type: 'date', nullable: true })
+  birthOfDate: Date;
+
+  @Column({ type: 'nvarchar', nullable: true })
+  imageUrl: string;
 
   @Column({ type: 'bit', default: true })
   isActive: boolean;
@@ -62,15 +65,6 @@ export class User extends BaseEntity {
 
   @DeleteDateColumn()
   deletedAt: Date;
-
-  @Column({ type: 'nvarchar', nullable: true })
-  name: string;
-
-  @Column({ type: 'nvarchar', nullable: true })
-  phone: string;
-
-  @Column({ type: 'nvarchar', nullable: true })
-  gender: Gender;
 
   @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({

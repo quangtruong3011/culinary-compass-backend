@@ -7,13 +7,6 @@ export class CreateBookingDto {
   })
   @IsNotEmpty()
   @IsNumber()
-  userId: number;
-
-  @ApiProperty({
-    example: 1,
-  })
-  @IsNotEmpty()
-  @IsNumber()
   restaurantId: number;
 
   @ApiProperty({

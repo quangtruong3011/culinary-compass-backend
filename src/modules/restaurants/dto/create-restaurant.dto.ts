@@ -6,6 +6,7 @@ import {
   IsString,
   IsUrl,
 } from 'class-validator';
+import { RestaurantImage } from 'src/modules/restaurant-images/entities/restaurant-image.entity';
 
 export class CreateRestaurantDto {
   @ApiProperty({
@@ -80,9 +81,7 @@ export class CreateRestaurantDto {
 
   @IsNotEmpty()
   @IsArray()
-  images: ImageDto[];
-}
+  images: RestaurantImage[];
 
-class ImageDto {
-  uri: string;
+  deletedImages?: RestaurantImage[];
 }

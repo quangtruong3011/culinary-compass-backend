@@ -1,3 +1,4 @@
+import { Booking } from 'src/modules/bookings/entities/booking.entity';
 import { RestaurantImage } from 'src/modules/restaurant-images/entities/restaurant-image.entity';
 import {
   BaseEntity,
@@ -5,6 +6,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -66,4 +68,7 @@ export class Restaurant extends BaseEntity {
     { eager: true },
   )
   images: RestaurantImage[];
+
+  @OneToMany(() => Booking, (booking) => booking.restaurant, { eager: true })
+  bookings: Booking[];
 }

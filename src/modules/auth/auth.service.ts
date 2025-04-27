@@ -15,6 +15,8 @@ import { SignUpResponseWithTokenDto } from './dto/sign-up-response.dto';
 import { SignInResponseDto } from './dto/sign-in-response.dto';
 import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto';
 import { GetUserDto } from '../users/dto/get-user.dto';
+import { ValidateRefreshTokenDto } from './dto/validate-refresh-token.dto';
+import { CreateTokenPayloadDto } from './dto/create-token-payload.dto';
 
 @Injectable()
 export class AuthService {
@@ -58,7 +60,9 @@ export class AuthService {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      birthOfDate: user.birthOfDate,
       gender: user.gender,
+      imageUrl: user.imageUrl,
       roles: user.roles ? user.roles.map((role) => role.name) : [],
     };
   }
@@ -77,7 +81,7 @@ export class AuthService {
     const newUser = await this.userService.create({
       email,
       passwordHash: hashPassword,
-      roles: [userRole],
+      roles: [userRole.name],
     });
 
     const payload = {
@@ -115,11 +119,7 @@ export class AuthService {
       const user = await this.validateRefreshToken(refreshToken);
       const payload = this.createTokenPayload(user);
       return {
-        user: {
-          id: user.id,
-          email: user.email,
-          roles: user.roles ? user.roles.map((role) => role.name) : [],
-        },
+        user: user,
         access_token: this.generateAccessToken(payload),
         refresh_token: this.generateRefreshToken(payload),
       };
@@ -131,26 +131,47 @@ export class AuthService {
     }
   }
 
-  async validateRefreshToken(token: string): Promise<User> {
+  async validateRefreshToken(token: string): Promise<GetUserDto> {
     try {
+      // Decode the token to get the payload
+      const decoded = this.jwtService.decode(token) as ValidateRefreshTokenDto;
+      if (!decoded) {
+        throw new UnauthorizedException('Invalid token payload');
+      }
+
+      // Check if the token is expired
+      const isExpired =
+        this.jwtService.verify(token, {
+          secret: jwtConstants.refreshSecret,
+          ignoreExpiration: true,
+        }).exp <
+        Date.now() / 1000;
+      if (isExpired) {
+        throw new UnauthorizedException('Token has expired');
+      }
+
       const payload = this.jwtService.verify(token, {
         secret: jwtConstants.refreshSecret,
       });
+
       const user = await this.userService.findOne(payload.sub);
       if (!user) {
         throw new UnauthorizedException();
       }
+
       return user;
     } catch (error) {
       throw new UnauthorizedException();
     }
   }
 
-  private createTokenPayload(user: User): any {
+  private createTokenPayload(user: CreateTokenPayloadDto): any {
     return {
       email: user.email,
       sub: user.id,
-      roles: user.roles ? user.roles.map((role) => role.name) : [],
+      roles: user.roles ? user.roles.map((role) => role) : [],
+      // iat: Math.floor(Date.now() / 1000),
+      // exp: Math.floor(Date.now() / 1000) + jwtConstants.expiresIn,
     };
   }
 

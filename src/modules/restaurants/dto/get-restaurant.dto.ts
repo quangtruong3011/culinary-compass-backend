@@ -1,13 +1,15 @@
 export class GetRestauntDto {
   id: number;
-  ownerId: number;
+  ownerId?: number;
   name: string;
   address: string;
-  city: string;
-  state: string;
-  country: string;
+  province: string;
+  district: string;
+  ward: string;
   phone: string;
+  description: string;
   website?: string;
   openingTime: Date;
   closingTime: Date;
+  images: string[];
 }
