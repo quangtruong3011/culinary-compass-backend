@@ -1,9 +1,10 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { TransformInterceptor } from './common';
 import * as bodyParser from 'body-parser';
+import { ClassSerializerInterceptor } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,8 +18,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    allowedHeaders: 
-      'Content-Type, Authorization',
+    allowedHeaders: 'Content-Type, Authorization',
   });
 
   app.use(bodyParser.json({ limit: '50mb' }));
@@ -27,6 +27,7 @@ async function bootstrap() {
   // app.useGlobalGuards(new JwtAuthGuard());
 
   app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   await app.listen(process.env.PORT ?? 3000);
 }

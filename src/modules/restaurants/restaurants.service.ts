@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
 import {
   PaginationOptions,
@@ -20,10 +20,7 @@ import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import { GetAllRestaurantForUserDto } from './dto/get-all-restaurant-for-user.dto';
 import { GetAllRestaurantForAdminDto } from './dto/get-all-restaurant-for-admin.dto';
-import { GetRestaurantForUserDto } from './dto/get-restaurant-for-user.dto';
-
-const readFile = promisify(fs.readFile);
-const unlink = promisify(fs.unlink);
+import { GetRestauntDto } from './dto/get-restaurant.dto';
 
 @Injectable()
 export class RestaurantsService {
@@ -55,17 +52,20 @@ export class RestaurantsService {
     const imageUploadResults = await Promise.all(
       createRestaurantDto.images.map(async (file) => {
         const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
-        const base64Data = file.uri.replace(/^data:image\/jpeg;base64,/, '');
+        const base64Data = file.imageUrl.replace(
+          /^data:image\/jpeg;base64,/,
+          '',
+        );
 
         try {
           await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
           const result =
             await this.cloudinaryService.uploadLocalFile(tempFilePath);
-          await unlink(tempFilePath);
+          await promisify(fs.unlink)(tempFilePath);
           return result;
         } catch (error) {
           console.error('Error uploading image:', error);
-          await unlink(tempFilePath).catch(() => {});
+          await promisify(fs.unlink)(tempFilePath).catch(() => {});
           throw new BadRequestException('Invalid file type');
         }
       }),
@@ -182,10 +182,28 @@ export class RestaurantsService {
     const restaurant = await this.restaurantRepository.findOneBy({ id });
     if (!restaurant) return new NotFoundException('Restaurant not found');
 
-    return restaurant;
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      province: restaurant.province,
+      district: restaurant.district,
+      ward: restaurant.ward,
+      phone: restaurant.phone,
+      description: restaurant.description,
+      website: restaurant.website,
+      openingTime: restaurant.openingTime,
+      closingTime: restaurant.closingTime,
+      images: restaurant.images.map((image) => ({
+        id: image.id,
+        imageUrl: image.imageUrl,
+        publicId: image.publicId,
+      })),
+      ownerId: restaurant.ownerId,
+    };
   }
 
-  async findOneRestaurantForUser(id: number): Promise<GetRestaurantForUserDto> {
+  async findOneRestaurantForUser(id: number): Promise<GetRestauntDto> {
     const restaurant = await this.restaurantRepository.findOne({
       where: { id },
       relations: ['images'],
@@ -196,10 +214,15 @@ export class RestaurantsService {
       id: restaurant.id,
       name: restaurant.name,
       address: restaurant.address,
+      province: restaurant.province,
+      district: restaurant.district,
+      ward: restaurant.ward,
+      phone: restaurant.phone,
       description: restaurant.description,
+      website: restaurant.website,
       openingTime: restaurant.openingTime,
       closingTime: restaurant.closingTime,
-      imageUrl: restaurant.images.map((image) => image.imageUrl),
+      images: restaurant.images.map((image) => image.imageUrl),
     };
   }
 
@@ -207,15 +230,81 @@ export class RestaurantsService {
     // const restaurant = await this.restaurantRepository.findOneBy({ id });
     // if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    // const { images, ...rest } = updateRestaurantDto;
-    // const updatedRestaurant = this.restaurantRepository.merge(restaurant, {
-    //   ...rest,
-    //   images:
-    //     images?.map((image) => ({ imageUrl: image })) || restaurant.images,
-    // });
+    // const tempDir = path.join(__dirname, '..', '..', 'temp');
+    // if (!fs.existsSync(tempDir)) {
+    //   fs.mkdirSync(tempDir, { recursive: true });
+    // }
 
-    // return await this.restaurantRepository.save(updatedRestaurant);
-    return 'Not yet implemented';
+    // // Xóa ảnh cũ nếu có publicId
+    // if (updateRestaurantDto.deletedImages) {
+    //   for (const image of updateRestaurantDto.deletedImages) {
+    //     const { publicId, id } = image;
+    //     if (publicId) {
+    //       await this.cloudinaryService.deleteFile(publicId);
+    //       await this.restaurantImagesService.remove(id);
+    //     }
+    //   }
+    // }
+
+    // if (updateRestaurantDto.images && updateRestaurantDto.images.length > 0) {
+    //   for (const image of updateRestaurantDto.images) {
+    //     const { imageUrl, publicId } = image;
+
+    //     // Chỉ upload ảnh mới chưa có publicId
+    //     if (!publicId && imageUrl.startsWith('data:image/')) {
+    //       const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
+    //       const base64Data = imageUrl.replace(/^data:image\/jpeg;base64,/, '');
+
+    //       try {
+    //         await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
+
+    //         const result =
+    //           await this.cloudinaryService.uploadLocalFile(tempFilePath);
+
+    //         await promisify(fs.unlink)(tempFilePath);
+
+    //         // Tạo bản ghi mới cho ảnh mới upload
+    //         await this.restaurantImagesService.create({
+    //           imageUrl: result.secure_url,
+    //           publicId: result.public_id,
+    //           restaurantId: restaurant.id,
+    //           isMain: false,
+    //         });
+    //       } catch (error) {
+    //         console.error('Error uploading image:', error);
+    //         await promisify(fs.unlink)(tempFilePath).catch(() => {});
+    //         throw new BadRequestException('Invalid file type');
+    //       }
+    //     }
+    //   }
+    // }
+
+    // const updatedRestaurant = this.restaurantRepository.merge(
+    //   restaurant,
+    //   updateRestaurantDto,
+    // );
+
+    // await this.restaurantRepository.save(updatedRestaurant);
+
+    // return {
+    //   id: updatedRestaurant.id,
+    //   name: updatedRestaurant.name,
+    //   address: updatedRestaurant.address,
+    //   province: updatedRestaurant.province,
+    //   district: updatedRestaurant.district,
+    //   ward: updatedRestaurant.ward,
+    //   phone: updatedRestaurant.phone,
+    //   description: updatedRestaurant.description,
+    //   website: updatedRestaurant.website,
+    //   openingTime: updatedRestaurant.openingTime,
+    //   closingTime: updatedRestaurant.closingTime,
+    //   images: updatedRestaurant.images.map((image) => ({
+    //     imageUrl: image.imageUrl,
+    //     publicId: image.publicId,
+    //   })),
+    // };
+
+    return console.log('updateRestaurantDto', updateRestaurantDto);
   }
 
   async remove(id: number, userId: number) {

@@ -9,12 +9,11 @@ import {
   HttpStatus,
   HttpCode,
   Query,
+  Req,
 } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
-import { ApiTags } from '@nestjs/swagger';
-import { And } from 'typeorm';
 import { PaginationOptions } from 'src/shared/base/pagination.interface';
 
 @Controller('bookings')
@@ -23,32 +22,32 @@ export class BookingsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createBookingDto: CreateBookingDto) {
-    return this.bookingsService.create(createBookingDto);
+  create(@Body() createBookingDto: CreateBookingDto, @Req() req) {
+    return this.bookingsService.create(createBookingDto, req.user.id);
   }
 
-  @Get()
+  // @Get()
+  // @HttpCode(HttpStatus.OK)
+  // findAll(@Query() options: PaginationOptions) {
+  //   return this.bookingsService.findAll(options);
+  // }
+
+  @Get('find-all-for-user')
   @HttpCode(HttpStatus.OK)
-  findAll(@Query() options: PaginationOptions) {
-    return this.bookingsService.findAll(options);
+  findAllForUser(@Query() options: PaginationOptions, @Req() req) {
+    return this.bookingsService.findAllForUser(options, req.user.id);
   }
 
-  @Get('user')
-  @HttpCode(HttpStatus.OK)
-  findAllByUserId(@Query() options: PaginationOptions & { userId: number }) {
-    return this.bookingsService.findAllByUserId(options);
-  }
-
-  @Get('admin')
+  @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
   findAllByAdmin(@Query() options: PaginationOptions & { restaurantId: number }) {
-    return this.bookingsService.findAllByRestaurantId(options);
+    return this.bookingsService.findAllForAdmin(options);
   }
 
-  @Get(':id')
+  @Get('find-one-for-user/:id')
   @HttpCode(HttpStatus.OK)
-  findOne(@Param('id') id: number) {
-    return this.bookingsService.findOne(+id);
+  findOneForUser(@Param('id') id: number) {
+    return this.bookingsService.findOneForUser(+id);
   }
 
   @Patch(':id')

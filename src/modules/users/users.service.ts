@@ -1,22 +1,23 @@
 import {
   BadRequestException,
-  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
-import { Gender, User } from './entities/user.entity';
-import { Repository } from 'typeorm';
-import {
-  PaginationOptions,
-  PaginationResult,
-} from 'src/shared/base/pagination.interface';
+import { In, Repository } from 'typeorm';
 import { Role } from '../roles/entities/role.entity';
 import { RoleEnum } from '../auth/constants/constants';
 import { UpdateUserRoleResponseDto } from './dto/update-user-role.dto';
+import { User } from './entities/user.entity';
+import { GetUserDto } from './dto/get-user.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import * as path from 'path';
+import * as fs from 'fs';
+import { promisify } from 'util';
+import { v4 as uuidv4 } from 'uuid';
+import { console } from 'inspector';
 
 @Injectable()
 export class UsersService {
@@ -25,21 +26,47 @@ export class UsersService {
     private userRepository: Repository<User>,
     @Inject('ROLE_REPOSITORY')
     private roleRepository: Repository<Role>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
+    const roles = await this.roleRepository.findBy({
+      name: In(createUserDto.roles),
+    });
+
+    if (roles.length !== createUserDto.roles.length) {
+      throw new BadRequestException('Invalid roles provided');
+    }
+
+    const userToCreate = {
+      ...createUserDto,
+      roles,
+    };
+
+    const user = this.userRepository.create(userToCreate);
     return await this.userRepository.save(user);
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<GetUserDto> {
     const user = await this.userRepository.findOne({
       where: { id },
+      relations: ['roles'],
     });
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      gender: user.gender,
+      birthOfDate: user.birthOfDate,
+      imageUrl: user.imageUrl,
+      roles: user.roles ? user.roles.map((role) => role.name) : [],
+    };
   }
 
   async updateUserRoles(
@@ -75,21 +102,51 @@ export class UsersService {
     };
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    if (
-      updateUserDto.gender &&
-      !Object.values(Gender).includes(updateUserDto.gender)
-    ) {
-      throw new BadRequestException('Gender must be either Male or Female');
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<GetUserDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['roles'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const tempDir = path.join(__dirname, '..', '..', 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+    const isBase64Image = updateUserDto.imageUrl?.startsWith('data:image/');
+
+    let imageUploadResult;
+    if (updateUserDto.imageUrl && isBase64Image) {
+      const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
+      const base64Data = updateUserDto.imageUrl.replace(
+        /^data:image\/jpeg;base64,/,
+        '',
+      );
+      try {
+        await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
+        imageUploadResult =
+          await this.cloudinaryService.uploadLocalFile(tempFilePath);
+        await promisify(fs.unlink)(tempFilePath);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        await promisify(fs.unlink)(tempFilePath).catch(() => {});
+        throw new BadRequestException('Invalid file type');
+      }
     }
 
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+    if (imageUploadResult) {
+      updateUserDto.imageUrl = imageUploadResult.secure_url;
+    }
+
+    const updatedUser = this.userRepository.merge(user, updateUserDto);
+
+    const savedUser = await this.userRepository.save(updatedUser);
+
+    return {
+      ...savedUser,
+      roles: savedUser.roles.map((role) => role.name),
+    };
   }
 
   async remove(id: number) {

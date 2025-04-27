@@ -15,4 +15,13 @@ export class CloudinaryService {
       );
     });
   }
+
+  async deleteFile(publicId: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      });
+    });
+  }
 }

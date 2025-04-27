@@ -6,7 +6,7 @@ import {
   PaginationOptions,
   PaginationResult,
 } from 'src/shared/base/pagination.interface';
-import { GetBookingDto } from './dto/get-booking.dto';
+import {  GetBookingDto } from './dto/get-booking.dto';
 import { In, Repository, ILike } from 'typeorm';
 import { Table } from '../tables/entities/table.entity';
 
@@ -15,89 +15,61 @@ export class BookingsService {
   constructor(
     @Inject('BOOKING_REPOSITORY')
     private bookingRepository: Repository<Booking>,
-    @Inject('TABLE_REPOSITORY')
-    private tableRepository: Repository<Table>,
   ) {}
 
-  async create(CreateBookingDto: CreateBookingDto) {
-    const {
-      userId,
-      restaurantId,
-      name,
-      phone,
-      email,
-      date,
-      startTime,
-      endTime,
-      guests,
-    } = CreateBookingDto;
-    // Tạo booking mới
+  async create(createBookingDto: CreateBookingDto, userId: number) {
     const booking = this.bookingRepository.create({
+      ...createBookingDto,
       userId,
-      restaurantId,
-      name,
-      phone,
-      email,
-      date,
-      startTime,
-      endTime,
-      guests,
     });
-
-    // Lưu booking
-    return await this.bookingRepository.save(booking);
+    return this.bookingRepository.save(booking);
   }
 
-  async findAll(
+  // async findAll(
+  //   options?: PaginationOptions,
+  // ): Promise<PaginationResult<GetBookingDto[]>> {
+  //   const {
+  //     page = Math.max(1, Number(options?.page)),
+  //     limit = Math.min(Math.max(1, Number(options?.limit)), 100),
+  //     filterText = options?.filterText?.trim() || undefined,
+  //   } = options || {};
+
+  //   const bookings = this.bookingRepository
+  //     .createQueryBuilder('booking')
+  //     .select([
+  //       'booking.id',
+  //       'booking.userId',
+  //       'booking.restaurantId',
+  //       'booking.name',
+  //       'booking.phone',
+  //       'booking.email',
+  //       'booking.date',
+  //       'booking.startTime',
+  //       'booking.endTime',
+  //       'booking.guests',
+  //     ])
+  //     .skip((page - 1) * limit)
+  //     .take(limit);
+
+  //   const [results, total] = await bookings.getManyAndCount();
+
+  //   return {
+  //     results,
+  //     total,
+  //     page,
+  //     limit,
+  //     totalPages: Math.ceil(total / limit),
+  //   };
+  // }
+
+  async findAllForUser(
     options?: PaginationOptions,
+    userId?: number,
   ): Promise<PaginationResult<GetBookingDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
       filterText = options?.filterText?.trim() || undefined,
-    } = options || {};
-
-    const bookings = this.bookingRepository
-      .createQueryBuilder('booking')
-      .leftJoinAndSelect('booking.tables', 'table')
-      .select([
-        'booking.id',
-        'booking.userId',
-        'booking.restaurantId',
-        'booking.name',
-        'booking.phone',
-        'booking.email',
-        'booking.createAt',
-        'booking.date',
-        'booking.startTime',
-        'booking.endTime',
-        'booking.guests',
-        'booking.status',
-        'table.id',
-        'table.name',
-        'table.capacity',
-      ])
-      .skip((page - 1) * limit)
-      .take(limit);
-
-    const [results, total] = await bookings.getManyAndCount();
-
-    return {
-      results,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-  async findAllByUserId(
-    options?: PaginationOptions & { userId?: number },
-  ): Promise<PaginationResult<GetBookingDto[]>> {
-    const {
-      page = Math.max(1, Number(options?.page)),
-      limit = Math.min(Math.max(1, Number(options?.limit)), 100),
-      filterText = options?.filterText?.trim() || undefined,
-      userId = options?.userId,
     } = options || {};
 
     const whereCondition = {};
@@ -138,7 +110,7 @@ export class BookingsService {
     };
   }
 
-  async findAllByRestaurantId(
+  async findAllForAdmin(
     options?: PaginationOptions & { restaurantId?: number },
   ): Promise<PaginationResult<GetBookingDto[]>> {
     const {
@@ -189,24 +161,27 @@ export class BookingsService {
     };
   }
 
-  async findOne(id: number): Promise<GetBookingDto> {
+  async findOneForUser(id: number) {
     const booking = await this.bookingRepository
       .createQueryBuilder('booking')
+      .leftJoin('booking.restaurant', 'restaurant')
       .where('booking.id = :id', { id })
       .select([
-        'booking.id',
-        'booking.restaurantId',
-        'booking.name',
-        'booking.phone',
-        'booking.email',
-        'booking.createAt',
-        'booking.date',
-        'booking.startTime',
-        'booking.endTime',
-        'booking.guests',
-        'booking.status',
+        'booking.id as id',
+        'booking.restaurantId as restaurantId',
+        'booking.name as name',
+        'booking.phone as phone',
+        'booking.email as email',
+        'booking.date as date',
+        'booking.startTime as startTime',
+        'booking.endTime as endTime',
+        'booking.guests as guests',
+        'booking.status as status',
+        'restaurant.name as restaurantName',
+        'restaurant.address as restaurantAddress',
+        'restaurant.phone as restaurantPhone',
       ])
-      .getOne();
+      .getRawOne();
 
     if (!booking) {
       throw new NotFoundException(`Booking with id ${id} not found`);

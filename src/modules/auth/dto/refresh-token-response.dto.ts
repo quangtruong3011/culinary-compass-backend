@@ -1,9 +1,7 @@
+import { GetUserDto } from 'src/modules/users/dto/get-user.dto';
+
 export class RefreshTokenResponseDto {
-  user: {
-    id: number;
-    email: string;
-    roles: string[];
-  };
+  user: GetUserDto;
   access_token: string;
   refresh_token: string;
 }

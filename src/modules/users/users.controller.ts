@@ -9,51 +9,41 @@ import {
   HttpCode,
   HttpStatus,
   Req,
-  UseGuards,
-  BadRequestException
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { RoleEnum } from '../auth/constants/constants';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
-import { Gender } from './entities/user.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles(RoleEnum.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Get(':id')
-  @Roles(RoleEnum.ADMIN, RoleEnum.MODERATOR)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
 
   @Post('update-roles')
-  @Roles(RoleEnum.USER)
   updateUserRoles(@Req() req, @Body() roleName: UpdateUserRoleDto) {
-    return this.usersService.updateUserRoles(req.user.userId, roleName.roleName);
+    return this.usersService.updateUserRoles(req.user.id, roleName.roleName);
   }
 
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('imageUrl'))
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    if (updateUserDto.gender && !Object.values(Gender).includes(updateUserDto.gender)) {
-      throw new BadRequestException('Gender must be either Male or Female');
-    }
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  @Roles(RoleEnum.ADMIN)
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
