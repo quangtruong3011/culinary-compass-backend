@@ -81,6 +81,7 @@ export class BookingsService {
         'booking.name',
         'booking.phone',
         'booking.email',
+        'booking.createAt',
         'booking.date',
         'booking.startTime',
         'booking.endTime',
@@ -160,6 +161,7 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException(`Booking with id ${id} not found`);
     }
-    await this.bookingRepository.remove(booking);
+    // booking.isDeleted = true;
+    return await this.bookingRepository.save(booking);
   }
 }
