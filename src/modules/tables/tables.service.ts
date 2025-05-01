@@ -8,6 +8,7 @@ import {
 } from 'src/shared/base/pagination.interface';
 import { GetTableDto } from './dto/get-table.dto';
 import { ILike, Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TablesService {
@@ -48,8 +49,8 @@ export class TablesService {
     });
 
     const results = tables.map((table) => {
-      const { id, name, restaurantId, numberOfSeats, isAvailable } = table;
-      return { id, name, restaurantId, numberOfSeats, isAvailable };
+      const { id, name, restaurantId, numberOfSeats, status } = table;
+      return { id, name, restaurantId, numberOfSeats, status };
     });
 
     return {
@@ -83,6 +84,19 @@ export class TablesService {
     }
     return await this.tableRepository.softDelete(id);
   }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateTableStatuses() {
+    const tables = await this.tableRepository.find({
+      relations: ['bookings'],
+    });
+
+    for (const table of tables) {
+      const currentStatus = await table.getCurrentStatus();
+      if (table.status !== currentStatus) {
+        table.status = currentStatus;
+        await this.tableRepository.save(table);
+      }
+    }
+  }
 }
-
-

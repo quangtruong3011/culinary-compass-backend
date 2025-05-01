@@ -227,84 +227,108 @@ export class RestaurantsService {
   }
 
   async update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
-    // const restaurant = await this.restaurantRepository.findOneBy({ id });
-    // if (!restaurant) throw new NotFoundException('Restaurant not found');
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id },
+      relations: ['images'],
+    });
 
-    // const tempDir = path.join(__dirname, '..', '..', 'temp');
-    // if (!fs.existsSync(tempDir)) {
-    //   fs.mkdirSync(tempDir, { recursive: true });
-    // }
+    if (!restaurant) {
+      throw new NotFoundException('Restaurant not found');
+    }
 
-    // // Xóa ảnh cũ nếu có publicId
-    // if (updateRestaurantDto.deletedImages) {
-    //   for (const image of updateRestaurantDto.deletedImages) {
-    //     const { publicId, id } = image;
-    //     if (publicId) {
-    //       await this.cloudinaryService.deleteFile(publicId);
-    //       await this.restaurantImagesService.remove(id);
-    //     }
-    //   }
-    // }
+    // 1. Cập nhật thông tin cơ bản trước
+    const {
+      deletedImages,
+      images,
+      ...infoToUpdate // chỉ giữ phần dữ liệu text
+    } = updateRestaurantDto;
 
-    // if (updateRestaurantDto.images && updateRestaurantDto.images.length > 0) {
-    //   for (const image of updateRestaurantDto.images) {
-    //     const { imageUrl, publicId } = image;
+    const updatedRestaurant = this.restaurantRepository.merge(
+      restaurant,
+      infoToUpdate,
+    );
+    await this.restaurantRepository.save(updatedRestaurant);
 
-    //     // Chỉ upload ảnh mới chưa có publicId
-    //     if (!publicId && imageUrl.startsWith('data:image/')) {
-    //       const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
-    //       const base64Data = imageUrl.replace(/^data:image\/jpeg;base64,/, '');
+    // 2. Xử lý xóa ảnh
+    if (deletedImages && deletedImages.length > 0) {
+      for (const image of deletedImages) {
+        const { publicId, id } = image;
+        if (publicId) {
+          await this.cloudinaryService.deleteFile(publicId);
+        }
+        if (id) {
+          await this.restaurantImagesService.remove(id);
+        }
+      }
+    }
 
-    //       try {
-    //         await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
+    // 3. Xử lý thêm ảnh mới
+    if (images && images.length > 0) {
+      const tempDir = path.join(__dirname, '..', '..', 'temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
 
-    //         const result =
-    //           await this.cloudinaryService.uploadLocalFile(tempFilePath);
+      for (const image of images) {
+        const { imageUrl, publicId } = image;
 
-    //         await promisify(fs.unlink)(tempFilePath);
+        if (!publicId && imageUrl.startsWith('data:image/')) {
+          const tempFilePath = path.join(tempDir, `${uuidv4()}.jpg`);
+          const base64Data = imageUrl.replace(
+            /^data:image\/[a-z]+;base64,/,
+            '',
+          );
 
-    //         // Tạo bản ghi mới cho ảnh mới upload
-    //         await this.restaurantImagesService.create({
-    //           imageUrl: result.secure_url,
-    //           publicId: result.public_id,
-    //           restaurantId: restaurant.id,
-    //           isMain: false,
-    //         });
-    //       } catch (error) {
-    //         console.error('Error uploading image:', error);
-    //         await promisify(fs.unlink)(tempFilePath).catch(() => {});
-    //         throw new BadRequestException('Invalid file type');
-    //       }
-    //     }
-    //   }
-    // }
+          try {
+            await fs.promises.writeFile(tempFilePath, base64Data, 'base64');
 
-    // const updatedRestaurant = this.restaurantRepository.merge(
-    //   restaurant,
-    //   updateRestaurantDto,
-    // );
+            const result =
+              await this.cloudinaryService.uploadLocalFile(tempFilePath);
+            await promisify(fs.unlink)(tempFilePath);
 
-    // await this.restaurantRepository.save(updatedRestaurant);
+            await this.restaurantImagesService.create({
+              imageUrl: result.secure_url,
+              publicId: result.public_id,
+              restaurantId: restaurant.id,
+              isMain: false,
+            });
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            await promisify(fs.unlink)(tempFilePath).catch(() => {});
+            throw new BadRequestException('Invalid file type');
+          }
+        }
+      }
+    }
 
-    // return {
-    //   id: updatedRestaurant.id,
-    //   name: updatedRestaurant.name,
-    //   address: updatedRestaurant.address,
-    //   province: updatedRestaurant.province,
-    //   district: updatedRestaurant.district,
-    //   ward: updatedRestaurant.ward,
-    //   phone: updatedRestaurant.phone,
-    //   description: updatedRestaurant.description,
-    //   website: updatedRestaurant.website,
-    //   openingTime: updatedRestaurant.openingTime,
-    //   closingTime: updatedRestaurant.closingTime,
-    //   images: updatedRestaurant.images.map((image) => ({
-    //     imageUrl: image.imageUrl,
-    //     publicId: image.publicId,
-    //   })),
-    // };
+    // 4. Trả kết quả
+    const refreshedRestaurant = await this.restaurantRepository.findOne({
+      where: { id },
+      relations: ['images'],
+    });
 
-    return console.log('updateRestaurantDto', updateRestaurantDto);
+    if (!refreshedRestaurant) {
+      throw new NotFoundException('Restaurant not found after update');
+    }
+
+    return {
+      id: refreshedRestaurant.id,
+      name: refreshedRestaurant.name,
+      address: refreshedRestaurant.address,
+      province: refreshedRestaurant.province,
+      district: refreshedRestaurant.district,
+      ward: refreshedRestaurant.ward,
+      phone: refreshedRestaurant.phone,
+      description: refreshedRestaurant.description,
+      website: refreshedRestaurant.website,
+      openingTime: refreshedRestaurant.openingTime,
+      closingTime: refreshedRestaurant.closingTime,
+      images: refreshedRestaurant.images.map((image) => ({
+        id: image.id,
+        imageUrl: image.imageUrl,
+        publicId: image.publicId,
+      })),
+    };
   }
 
   async remove(id: number, userId: number) {

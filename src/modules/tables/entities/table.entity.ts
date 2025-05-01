@@ -1,3 +1,4 @@
+import { Booking } from 'src/modules/bookings/entities/booking.entity';
 import {
   BaseEntity,
   Column,
@@ -6,6 +7,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 @Entity('tables')
@@ -22,8 +25,32 @@ export class Table extends BaseEntity {
   @Column({ type: 'int' })
   numberOfSeats: number;
 
-  @Column({ type: 'bit', default: true })
-  isAvailable: boolean;
+  @Column({
+    type: 'nvarchar',
+    enum: {
+      available: 'available',
+      unavailable: 'unavailable',
+      occupied: 'occupied',
+    },
+    default: 'available',
+  })
+  status: string;
+
+  async getCurrentStatus(): Promise<'available' | 'occupied' | 'unavailable'> {
+    if (this.status === 'unavailable') {
+      return 'unavailable'; // Bàn bị khóa
+    }
+
+    // Kiểm tra xem có booking nào đang diễn ra không
+    const activeBooking = await this.bookings.find(
+      (booking) =>
+        booking.status === 'confirmed' &&
+        new Date() >= booking.startTime &&
+        new Date() <= booking.endTime,
+    );
+
+    return activeBooking ? 'occupied' : 'available';
+  }
 
   @CreateDateColumn()
   createdAt: Date;
@@ -33,4 +60,14 @@ export class Table extends BaseEntity {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @ManyToMany(() => Booking, (booking) => booking.tables, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'table_bookings',
+    joinColumn: { name: 'tableId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'bookingId', referencedColumnName: 'id' },
+  })
+  bookings: Booking[];
 }

@@ -15,6 +15,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { RestaurantImagesModule } from './modules/restaurant-images/restaurant-images.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
     MulterModule.register({
       dest: './uploads',
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     CloudinaryModule,
     AuthModule,

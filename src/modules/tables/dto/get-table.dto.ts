@@ -3,5 +3,5 @@ export class GetTableDto {
   name: string;
   restaurantId: number;
   numberOfSeats: number;
-  isAvailable: boolean;
+  status: string; // 'available', 'occupied', 'reserved'
 }

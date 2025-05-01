@@ -45,15 +45,25 @@ export class Booking extends BaseEntity {
   @Column({ type: 'bigint' })
   guests: number;
 
+  @Column({
+    type: 'nvarchar',
+    enum: {
+      pending: 'pending',
+      confirmed: 'confirmed',
+      cancelled: 'cancelled',
+      completed: 'completed',
+    },
+    default: 'pending',
+  })
+  status: string;
+
   @CreateDateColumn()
   createAt: Date;
 
   @UpdateDateColumn()
   updateAt: Date;
 
-    @Column({ type: 'nvarchar', default: 'pending' })
-    status: string;
-    @DeleteDateColumn({ nullable: true })
+  @DeleteDateColumn({ nullable: true })
   deleteAt: Date;
 
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.bookings, {
@@ -62,11 +72,11 @@ export class Booking extends BaseEntity {
   })
   restaurant: Restaurant;
 
-    @ManyToMany(() => Table)
-    @JoinTable({
-        name: 'booking_table', 
-        joinColumn: { name: 'booking_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'table_id', referencedColumnName: 'id' },
-    })
-    tables: Table[];
+  @ManyToMany(() => Table)
+  @JoinTable({
+    name: 'booking_table',
+    joinColumn: { name: 'booking_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'table_id', referencedColumnName: 'id' },
+  })
+  tables: Table[];
 }

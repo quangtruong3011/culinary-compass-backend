@@ -15,6 +15,8 @@ import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { PaginationOptions } from 'src/shared/base/pagination.interface';
+import { BookingStatusDto } from './dto/booking-status.dto';
+import { GetAvailableTableDto } from './dto/get-available-table.dto';
 
 @Controller('bookings')
 export class BookingsController {
@@ -26,12 +28,6 @@ export class BookingsController {
     return this.bookingsService.create(createBookingDto, req.user.id);
   }
 
-  // @Get()
-  // @HttpCode(HttpStatus.OK)
-  // findAll(@Query() options: PaginationOptions) {
-  //   return this.bookingsService.findAll(options);
-  // }
-
   @Get('find-all-for-user')
   @HttpCode(HttpStatus.OK)
   findAllForUser(@Query() options: PaginationOptions, @Req() req) {
@@ -40,8 +36,16 @@ export class BookingsController {
 
   @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
-  findAllByAdmin(@Query() options: PaginationOptions & { restaurantId: number }) {
+  findAllByAdmin(
+    @Query() options: PaginationOptions & { restaurantId: number },
+  ) {
     return this.bookingsService.findAllForAdmin(options);
+  }
+
+  @Get('find-one-for-admin/:id')
+  @HttpCode(HttpStatus.OK)
+  findOneForAdmin(@Param('id') id: number) {
+    return this.bookingsService.findOneForAdmin(+id);
   }
 
   @Get('find-one-for-user/:id')
@@ -55,14 +59,39 @@ export class BookingsController {
     return this.bookingsService.update(+id, updateBookingDto);
   }
 
-  @Patch('status/:id')
+  @Patch(':id/status-booking')
   @HttpCode(HttpStatus.OK)
-  statusBooking(@Param('id') id: number, @Body('status') status: 'confirmed' | 'cancelled' | 'pending' | 'completed') {
-    return this.bookingsService.statusBooking(+id, status);
+  updateStatusBooking(
+    @Param('id') id: number,
+    @Body('status') status: BookingStatusDto,
+  ) {
+    return this.bookingsService.updateStatusBooking(+id, status);
   }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: number) {
-  //   return this.bookingsService.remove(+id);
-  // }
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    return this.bookingsService.remove(+id);
+  }
+
+  @Patch(':id/assign-tables')
+  @HttpCode(HttpStatus.OK)
+  assignTables(@Param('id') id: number, @Body('tableIds') tableIds: number[]) {
+    return this.bookingsService.assignTablesToBooking(+id, tableIds);
+  }
+
+  @Get('available-table')
+  @HttpCode(HttpStatus.OK)
+  availableTable(@Query() query: GetAvailableTableDto) {
+    const { restaurantId, date, startTime, endTime } = query;
+    const parsedDate = new Date(date);
+    const parsedStartTime = new Date(`${date}T${startTime}`);
+    const parsedEndTime = new Date(`${date}T${endTime}`);
+
+    return this.bookingsService.availableTable(
+      restaurantId,
+      parsedDate,
+      parsedStartTime,
+      parsedEndTime,
+    );
+  }
 }
