@@ -94,4 +94,10 @@ export class BookingsController {
       parsedEndTime,
     );
   }
+
+  @Get('dashboard')
+  @HttpCode(HttpStatus.OK)
+  async getDashboardData() {
+    return this.bookingsService.getDashboardData();
+  }
 }

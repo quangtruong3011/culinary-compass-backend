@@ -17,6 +17,7 @@ import {
 import { Table } from '../tables/entities/table.entity';
 import { BookingStatusDto } from './dto/booking-status.dto';
 import { GetTableDto } from '../tables/dto/get-table.dto';
+import * as moment from 'moment';
 
 @Injectable()
 export class BookingsService {
@@ -382,5 +383,76 @@ export class BookingsService {
         return table;
       })
       .filter((table) => table.status === 'available');
+  }
+
+  async getDashboardData() {
+    const today = moment().startOf('day').toDate();
+    const startOfMonth = moment().startOf('month').toDate();
+    const startOfQuarter = moment().startOf('quarter').toDate();
+    const endOfToday = moment().endOf('day').toDate();
+
+    console.log(today, startOfMonth, startOfQuarter, endOfToday);
+
+    // 1. Tổng số lượt đặt bàn (không tính bàn đã hủy) của mỗi cửa hàng trong ngày hôm nay
+    const todayBookings = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .leftJoin('booking.restaurant', 'restaurant')
+      .where('booking.date BETWEEN :startOfToday AND :endOfToday', {
+        startOfToday: today,
+        endOfToday,
+      })
+      .andWhere('booking.status != :status', { status: 'cancelled' })
+      .select([
+        'booking.restaurantId as restaurantId',
+        'COUNT(booking.id) as totalBookings',
+        'restaurant.name as restaurantName',
+      ])
+      .groupBy('booking.restaurantId, restaurant.name')
+      .getRawMany();
+
+
+    // 2. Top 5 cửa hàng có tổng số lượt đặt bàn cao nhất trong tháng này
+    const top5MonthlyBookings = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .leftJoin('booking.restaurant', 'restaurant')
+      .where('booking.date BETWEEN :startOfMonth AND :endOfToday', {
+        startOfMonth,
+        endOfToday,
+      })
+      .andWhere('booking.status != :status', { status: 'cancelled' })
+      .select([
+        'booking.restaurantId as restaurantId',
+        'COUNT(booking.id) as totalBookings',
+        'restaurant.name as restaurantName',
+      ])
+      .groupBy('booking.restaurantId, restaurant.name')
+      .orderBy('totalBookings', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    // 3. Top 5 cửa hàng có tổng số lượt đặt bàn cao nhất trong quý này
+    const top5QuarterlyBookings = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .leftJoin('booking.restaurant', 'restaurant')
+      .where('booking.date BETWEEN :startOfQuarter AND :endOfToday', {
+        startOfQuarter,
+        endOfToday,
+      })
+      .andWhere('booking.status != :status', { status: 'cancelled' })
+      .select([
+        'booking.restaurantId as restaurantId',
+        'COUNT(booking.id) as totalBookings',
+        'restaurant.name as restaurantName',
+      ])
+      .groupBy('booking.restaurantId, restaurant.name')
+      .orderBy('totalBookings', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    return {
+      todayBookings,
+      top5MonthlyBookings,
+      top5QuarterlyBookings,
+    };
   }
 }
