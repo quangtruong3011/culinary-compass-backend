@@ -57,6 +57,9 @@ export class Booking extends BaseEntity {
   })
   status: string;
 
+  @Column({ type: 'bit', default: false })
+  isCommented: boolean;
+
   @CreateDateColumn()
   createAt: Date;
 
@@ -65,6 +68,9 @@ export class Booking extends BaseEntity {
 
   @DeleteDateColumn({ nullable: true })
   deleteAt: Date;
+
+  @Column({ type: 'nvarchar', nullable: true })
+  note: string;
 
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.bookings, {
     onDelete: 'CASCADE',

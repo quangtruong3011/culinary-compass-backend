@@ -69,6 +69,8 @@ export class BookingsService {
         'booking.endTime',
         'booking.guests',
         'booking.status',
+        'booking.note',
+        'booking.isCommented',
       ])
       .skip((page - 1) * limit)
       .take(limit);
@@ -118,6 +120,8 @@ export class BookingsService {
         'booking.endTime',
         'booking.guests',
         'booking.status',
+        'booking.note',
+        'booking.isCommented',
       ])
       .skip((page - 1) * limit)
       .take(limit);
@@ -149,6 +153,8 @@ export class BookingsService {
         'booking.endTime as endTime',
         'booking.guests as guests',
         'booking.status as status',
+        'booking.note as note',
+        'booking.isCommented as isCommented',
         'restaurant.name as restaurantName',
         'restaurant.address as restaurantAddress',
         'restaurant.phone as restaurantPhone',
@@ -179,6 +185,8 @@ export class BookingsService {
         'booking.endTime as endTime',
         'booking.guests as guests',
         'booking.status as status',
+        'booking.note as note',
+        'booking.isCommented as isCommented',
 
         'restaurant.name as restaurantName',
         'restaurant.address as restaurantAddress',
@@ -205,6 +213,8 @@ export class BookingsService {
       endTime: rawBooking[0].endTime,
       guests: rawBooking[0].guests,
       status: rawBooking[0].status,
+      note: rawBooking[0].note,
+      isCommented: rawBooking[0].isCommented,
       restaurant: {
         name: rawBooking[0].restaurantName,
         address: rawBooking[0].restaurantAddress,
@@ -454,5 +464,14 @@ export class BookingsService {
       top5MonthlyBookings,
       top5QuarterlyBookings,
     };
+  }
+
+  async commentRestaurant(id: number) {
+    const booking = await this.bookingRepository.findOne({ where: { id } });
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${id} not found`);
+    }
+    booking.isCommented = true;
+    return await this.bookingRepository.save(booking);
   }
 }

@@ -10,6 +10,7 @@ export class GetBookingDto {
   endTime: Date;
   guests: number;
   status: string;
+  note?: string;
 }
 
 export interface GetBookingDetailsDto {
@@ -25,4 +26,6 @@ export interface GetBookingDetailsDto {
   endTime: Date;
   guests: number;
   status: string;
+  note?: string;
+  isCommented: boolean;
 }

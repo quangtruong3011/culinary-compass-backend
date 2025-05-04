@@ -100,4 +100,10 @@ export class BookingsController {
   async getDashboardData() {
     return this.bookingsService.getDashboardData();
   }
+
+  @Patch(':id/comment')
+  @HttpCode(HttpStatus.OK)
+  comment(@Param('id') id: number) {
+    return this.bookingsService.commentRestaurant(+id);
+  }
 }

@@ -16,6 +16,7 @@ import { RestaurantImagesModule } from './modules/restaurant-images/restaurant-i
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CommentsModule } from './modules/comments/comments.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     RestaurantImagesModule,
     TablesModule,
     BookingsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [

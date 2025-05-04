@@ -51,4 +51,6 @@ export class CreateBookingDto {
   })
   @IsNotEmpty()
   guests: number;
+
+  note?: string;
 }
