@@ -395,76 +395,61 @@ export class BookingsService {
       .filter((table) => table.status === 'available');
   }
 
-  async getDashboardData() {
+  async getDashboardData(ownerId: number) {
     const today = moment().startOf('day').toDate();
     const startOfMonth = moment().startOf('month').toDate();
     const startOfQuarter = moment().startOf('quarter').toDate();
     const endOfToday = moment().endOf('day').toDate();
-
-    console.log(today, startOfMonth, startOfQuarter, endOfToday);
-
-    // 1. Tổng số lượt đặt bàn (không tính bàn đã hủy) của mỗi cửa hàng trong ngày hôm nay
-    const todayBookings = await this.bookingRepository
+  
+    const rawStats = await this.bookingRepository
       .createQueryBuilder('booking')
       .leftJoin('booking.restaurant', 'restaurant')
-      .where('booking.date BETWEEN :startOfToday AND :endOfToday', {
-        startOfToday: today,
-        endOfToday,
-      })
-      .andWhere('booking.status != :status', { status: 'cancelled' })
       .select([
         'booking.restaurantId as restaurantId',
-        'COUNT(booking.id) as totalBookings',
         'restaurant.name as restaurantName',
+        `
+        SUM(CASE 
+          WHEN booking.date BETWEEN :todayStart AND :todayEnd THEN 1 
+          ELSE 0 
+        END) as todayBookings`,
+        `
+        SUM(CASE 
+          WHEN booking.date BETWEEN :startOfMonth AND :todayEnd THEN 1 
+          ELSE 0 
+        END) as monthBookings`,
+        `
+        SUM(CASE 
+          WHEN booking.date BETWEEN :startOfQuarter AND :todayEnd THEN 1 
+          ELSE 0 
+        END) as quarterBookings`,
       ])
-      .groupBy('booking.restaurantId, restaurant.name')
-      .getRawMany();
-
-
-    // 2. Top 5 cửa hàng có tổng số lượt đặt bàn cao nhất trong tháng này
-    const top5MonthlyBookings = await this.bookingRepository
-      .createQueryBuilder('booking')
-      .leftJoin('booking.restaurant', 'restaurant')
-      .where('booking.date BETWEEN :startOfMonth AND :endOfToday', {
+      .where('booking.status != :status', { status: 'cancelled' })
+      .andWhere('restaurant.ownerId = :ownerId', { ownerId })
+      .setParameters({
+        todayStart: today,
+        todayEnd: endOfToday,
         startOfMonth,
-        endOfToday,
-      })
-      .andWhere('booking.status != :status', { status: 'cancelled' })
-      .select([
-        'booking.restaurantId as restaurantId',
-        'COUNT(booking.id) as totalBookings',
-        'restaurant.name as restaurantName',
-      ])
-      .groupBy('booking.restaurantId, restaurant.name')
-      .orderBy('totalBookings', 'DESC')
-      .limit(5)
-      .getRawMany();
-
-    // 3. Top 5 cửa hàng có tổng số lượt đặt bàn cao nhất trong quý này
-    const top5QuarterlyBookings = await this.bookingRepository
-      .createQueryBuilder('booking')
-      .leftJoin('booking.restaurant', 'restaurant')
-      .where('booking.date BETWEEN :startOfQuarter AND :endOfToday', {
         startOfQuarter,
-        endOfToday,
       })
-      .andWhere('booking.status != :status', { status: 'cancelled' })
-      .select([
-        'booking.restaurantId as restaurantId',
-        'COUNT(booking.id) as totalBookings',
-        'restaurant.name as restaurantName',
-      ])
       .groupBy('booking.restaurantId, restaurant.name')
-      .orderBy('totalBookings', 'DESC')
-      .limit(5)
       .getRawMany();
-
+  
+    // Xử lý dữ liệu sau khi truy vấn
+    const todayBookings = rawStats.filter(r => +r.todayBookings > 0);
+    const top5MonthlyBookings = [...rawStats]
+      .sort((a, b) => +b.monthBookings - +a.monthBookings)
+      .slice(0, 5);
+    const top5QuarterlyBookings = [...rawStats]
+      .sort((a, b) => +b.quarterBookings - +a.quarterBookings)
+      .slice(0, 5);
+  
     return {
       todayBookings,
       top5MonthlyBookings,
       top5QuarterlyBookings,
     };
   }
+  
 
   async commentRestaurant(id: number) {
     const booking = await this.bookingRepository.findOne({ where: { id } });

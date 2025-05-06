@@ -95,10 +95,10 @@ export class BookingsController {
     );
   }
 
-  @Get('dashboard')
+  @Get(':ownerId/dashboard')
   @HttpCode(HttpStatus.OK)
-  async getDashboardData() {
-    return this.bookingsService.getDashboardData();
+  getDashboardData(@Param('ownerId') ownerId: number) {
+    return this.bookingsService.getDashboardData(+ownerId);
   }
 
   @Patch(':id/comment')
