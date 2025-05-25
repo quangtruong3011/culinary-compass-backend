@@ -87,13 +87,14 @@ export class BookingsService {
   }
 
   async findAllForAdmin(
-    options?: PaginationOptions & { restaurantId?: number },
+    options?: PaginationOptions & { restaurantId?: number, status?: string },
   ): Promise<PaginationResult<GetBookingDto[]>> {
     const {
       page = Math.max(1, Number(options?.page)),
       limit = Math.min(Math.max(1, Number(options?.limit)), 100),
       filterText = options?.filterText?.trim() || undefined,
       restaurantId = options?.restaurantId,
+      status = options?.status,
     } = options || {};
 
     const whereCondition = {};
@@ -104,6 +105,10 @@ export class BookingsService {
 
     if (restaurantId) {
       whereCondition['restaurantId'] = restaurantId;
+    }
+
+    if (status) {
+      whereCondition['status'] = status;
     }
 
     const bookings = this.bookingRepository

@@ -8,12 +8,15 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Exclude } from 'class-transformer';
+import { Comment } from 'src/modules/comments/entities/comment.entity';
+import { Booking } from 'src/modules/bookings/entities/booking.entity';
 
 enum Gender {
   MALE = 'Male',
@@ -73,4 +76,10 @@ export class User extends BaseEntity {
     inverseJoinColumn: { name: 'roleId', referencedColumnName: 'id' },
   })
   roles: Role[];
+
+  @ManyToMany(() => Comment, (comment) => comment.users)
+  comments: Comment[];
+
+  @OneToMany(() => Booking, (booking) => booking.user)
+  bookings: Booking[];
 }

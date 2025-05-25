@@ -37,7 +37,7 @@ export class BookingsController {
   @Get('find-all-for-admin')
   @HttpCode(HttpStatus.OK)
   findAllByAdmin(
-    @Query() options: PaginationOptions & { restaurantId: number },
+    @Query() options: PaginationOptions & { restaurantId: number, status?:string },
   ) {
     return this.bookingsService.findAllForAdmin(options);
   }

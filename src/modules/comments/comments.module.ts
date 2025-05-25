@@ -3,11 +3,13 @@ import { DatabaseModule } from 'src/database/database.module';
 import { CommentController } from './comments.controller';
 import { commentProviders } from './comment.provider';
 import { CommentService } from './comments.service';
+import { UsersModule } from '../users/users.module';
+import { userProviders } from '../users/user.provider';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, UsersModule],
   controllers: [CommentController],
-  providers: [...commentProviders, CommentService],
+  providers: [...commentProviders, ...userProviders, CommentService],
   exports: [CommentService],
 })
 export class CommentsModule {}

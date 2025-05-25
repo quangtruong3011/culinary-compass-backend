@@ -1,5 +1,6 @@
 import { Restaurant } from 'src/modules/restaurants/entities/restaurant.entity';
 import { Table } from 'src/modules/tables/entities/table.entity';
+import { Comment } from 'src/modules/comments/entities/comment.entity';
 import {
   BaseEntity,
   Column,
@@ -11,7 +12,10 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  OneToMany,
+  OneToOne,
 } from 'typeorm';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Entity('bookings')
 export class Booking extends BaseEntity {
@@ -85,4 +89,10 @@ export class Booking extends BaseEntity {
     inverseJoinColumn: { name: 'table_id', referencedColumnName: 'id' },
   })
   tables: Table[];
+
+  @OneToMany(() => Comment, (comment) => comment.booking)
+  comments: Comment[];
+
+  @ManyToOne(() => User, (user) => user.bookings)
+  user: User;
 }
